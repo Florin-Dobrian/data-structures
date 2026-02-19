@@ -1,0 +1,35 @@
+# --- IDEs and Editor metadata ---
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# --- Python (uv / General) ---
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.python-version
+
+# --- Rust (Cargo) ---
+/rust/target/
+# If you run cargo inside the rust folder, this covers it:
+target/
+Cargo.lock
+
+# --- Scala (sbt) ---
+/scala/target/
+/scala/project/project/
+/scala/project/target/
+.bsp/
+.scala-build/
+*.class
+
+# --- C++ (CMake) ---
+/cpp/cmake-build-debug/
+/cpp/cmake-build-release/
+/cpp/build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake

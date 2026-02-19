@@ -260,3 +260,38 @@ data-structures/
 └── scala/
     ├── build.sbt
     └── src/main/scala/Main.scala
+
+# Data Structures Research: Comparative Observations (Final)
+
+### 🐍 Python (High-Level / Interpretive)
+* **Ease of Use:** Fastest implementation via `collections.deque` with built-in `maxlen`.
+* **Abstraction:** Memory management is entirely hidden; logic focuses on readability.
+* **Performance Paradox:** Surprisingly, `(head + 1) % max_size` is relatively fast in Python's high-level implementation compared to the overhead of other operations.
+
+### 🛠️ C++ (Low-Level / Manual)
+* **Hardware Sensitivity (Modulo):** In C++, the `%` operator is an "expensive" arithmetic operation. For high-performance research, if the buffer size is a power of 2, developers often use bitwise `&` to handle wrap-around for a significant speed boost.
+* **Memory Layout:** `std::deque` is a sequence of blocks; our manual **Circular Buffer** (using `std::vector`) is faster due to contiguous memory and better **cache locality**.
+* **Toolchain:** Requires the most scaffolding (CMake) but allows for the most aggressive optimizations (`-O3`).
+
+### 🦀 Rust (Safe / Explicit)
+* **Memory Tuning:** `VecDeque` lives on the heap and can grow, while our manual **Circular Buffer** can be tuned for zero-allocation performance once initialized, staying fixed in memory.
+* **Allocation Strategy:** `vec![0.0; size]` allocates once on the heap and stays that size forever. This "fixed-size heap allocation" is extremely performant.
+* **Safety & Option Types:** The `if let Some(old_val)` pattern in the Deque forces the developer to acknowledge that `pop_front()` could return `None`, preventing runtime crashes.
+* **Explicit Mutation:** Rust requires `&mut self`, making it crystal clear which methods modify the internal state.
+
+### 📜 Scala (JVM / Hybrid)
+* **Style Choice:** We chose a **"Java-like" mutable style** rather than a functional approach. This ensures the research comparison is fair (apples-to-apples) across all four languages by using the same underlying logic.
+* **JVM Lifecycle:** `sbt` has a long "cold-start" time, but the JIT (Just-In-Time) compiler optimizes the code as it runs.
+* **Flexibility:** While we used a mutable approach for performance parity, Scala offers the unique ability to switch to immutable collections if data persistence were a requirement.
+
+---
+
+### Implementation Matrix Summary
+
+| Feature | Python | C++ | Rust | Scala |
+| :--- | :--- | :--- | :--- | :--- |
+| **Logic Type** | Dynamic/Iterative | Low-level/Pointer-like | Safe/Explicit | JVM/Object-Oriented |
+| **Modulo %** | Efficiently hidden | Expensive (Manual) | Strict | Standard JVM |
+| **Memory Policy** | Automatic | Manual/RAII | Ownership-based | Garbage Collected |
+| **Style Used** | Imperative | Imperative | Imperative/Safe | Mutable (for Parity) |
+

@@ -1,297 +1,131 @@
-Exactly. The goal is four distinct, self-contained projects sitting inside your `data-structures` root. This allows you to open `python/` in PyCharm, `rust/` in RustRover, etc., without the IDEs getting confused by each other's configuration files.
+# Data Structures
 
-Here is the step-by-step checklist to build the structure from your root directory: `/Users/florin/research/git/data-structures`.
+A polyglot playground for exploring data structures and containers across four languages: Python, C++, Rust, and Scala. Each language lives in its own self-contained project with its own build system, so you can open any subfolder independently in its native IDE.
 
----
+## Repository Layout
 
-### 1. Python (uv)
-Python is now shifting toward the "src layout" to match compiled languages.
-
-1.  **Create folder:** `mkdir python && cd python`
-2.  **Initialize:** `uv init --lib` (The `--lib` flag sets up a package structure).
-3.  **Setup Environment:** `uv venv`
-4.  **Structure Check:** Ensure your code goes in `python/src/avg_tracker/` (or similar).
-5.  **Clean up:** `rm hello.py` (if `uv` generated it in the root).
-
----
-
-### 2. Rust (Cargo)
-Cargo is the most automated of the four.
-
-1.  **Create folder:** `mkdir rust && cd rust`
-2.  **Initialize:** `cargo init --bin` (The `--bin` flag creates an executable with `src/main.rs`).
-3.  **Structure Check:** Your code lives in `rust/src/main.rs`.
-4.  **Build check:** Run `cargo build` just to ensure the toolchain is happy.
-
----
-
-### 3. Scala (sbt)
-Since there is no "sbt init" command, we do this manually or via IntelliJ.
-
-1.  **Create folders:** `mkdir -p scala/src/main/scala`
-2.  **Create config:** Inside `scala/`, create a file named `build.sbt`:
-    ```scala
-    name := "scala-data-structures"
-    version := "0.1"
-    scalaVersion := "3.3.1"
-    ```
-3.  **Create file:** `touch scala/src/main/scala/Main.scala`
-
----
-
-### 4. C++ (CMake)
-Like Scala, this is a manual file-based setup.
-
-1.  **Create folders:** `mkdir -p cpp/src`
-2.  **Create config:** Inside `cpp/`, create a file named `CMakeLists.txt`:
-    ```cmake
-    cmake_minimum_required(VERSION 3.20)
-    project(cpp_data_structures)
-    set(CMAKE_CXX_STANDARD 17)
-    add_executable(avg_tracker src/main.cpp)
-    ```
-3.  **Create file:** `touch cpp/src/main.cpp`
-
----
-
-### The Final Folder Tree
-Once you finish these tasks, your research repo will look like this:
-
-
-
-```text
+```
 data-structures/
-├── cpp/
-│   ├── CMakeLists.txt
-│   └── src/
-│       └── main.cpp
-├── python/
+├── python/          # uv + src layout
 │   ├── pyproject.toml
-│   ├── .venv/
-│   └── src/
-│       └── (your_package)/
-├── rust/
+│   ├── main.py
+│   └── src/ds/
+│       └── trackers.py
+├── cpp/             # CMake
+│   ├── CMakeLists.txt
+│   └── src/main.cpp
+├── rust/            # Cargo
 │   ├── Cargo.toml
-│   └── src/
-│       └── main.rs
-└── scala/
+│   └── src/main.rs
+└── scala/           # sbt
     ├── build.sbt
-    └── src/
-        └── main/
-            └── scala/
-                └── Main.scala
+    └── src/main/scala/
+        └── Main.scala
 ```
 
-### Next Steps for you:
-1.  Run the commands above.
-2.  Open each folder in its respective IDE.
-3.  Paste the **8 implementations** we wrote earlier into the corresponding `src` files.
+## Problems
 
-Would you like me to provide a **global `.gitignore`** for the root of this repo so you don't accidentally commit `target/`, `.venv/`, `.idea/`, and `cmake-build-debug/` folders?
+### 1. Moving Average Tracker
 
-# --- IDEs and Editor metadata ---
-.idea/
-.vscode/
-*.swp
-*.swo
-.DS_Store
+Track the running average of up to the last *n* numbers added. Two implementations per language:
 
-# --- Python (uv / General) ---
-.venv/
-__pycache__/
-*.pyc
-.pytest_cache/
-.python-version
+**A — Deque.** Uses each language's standard double-ended queue (`collections.deque`, `std::deque`, `VecDeque`, `mutable.Queue`). When the window is full, pop the oldest value from the front. O(1) amortized.
 
-# --- Rust (Cargo) ---
-/rust/target/
-# If you run cargo inside the rust folder, this covers it:
-target/
-Cargo.lock
+**B — Circular Buffer.** A fixed-size array with a head index that wraps around via modulo. No allocation after init, no shifting. O(1) guaranteed with better cache locality.
 
-# --- Scala (sbt) ---
-/scala/target/
-/scala/project/project/
-/scala/project/target/
-.bsp/
-.scala-build/
-*.class
+Both maintain a running sum so `get_average` is always O(1).
 
-# --- C++ (CMake) ---
-/cpp/cmake-build-debug/
-/cpp/cmake-build-release/
-/cpp/build/
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
+## Setup
 
-# Data Structures: Environment Setup
+### 1. Create the directory layout
 
-### 🐍 Python (uv)
-cd python
-uv init --lib           # Creates project and src/ layout
-uv venv                 # Creates the local virtual environment
-mv src/python src/ds    # Rename package to 'ds'
-# Ensure 'name = "ds"' in pyproject.toml
-uv pip install -e .     # Links src/ds to the venv
+```bash
+mkdir -p data-structures/{python,cpp/src,rust,scala/src/main/scala}
+```
 
-### 🦀 Rust (Cargo)
+### 2. Initialize each project
+
+```bash
+# Python (uv)
+cd data-structures/python
+uv init --lib              # creates pyproject.toml + src/ layout
+uv venv                    # creates .venv
+mv src/python src/ds       # rename package to 'ds'
+uv pip install -e .        # link src/ds into the venv
+
+# Rust (Cargo)
 cd ../rust
-cargo init --bin        # Creates Cargo.toml and src/main.rs
+cargo init --bin           # creates Cargo.toml + src/main.rs
 
-### 🛠️ C++ (CMake)
+# C++ (CMake)
 cd ../cpp
-mkdir src
 touch src/main.cpp
-
-# Create CMakeLists.txt in /cpp/ with this content:
 cat <<EOF > CMakeLists.txt
 cmake_minimum_required(VERSION 3.20)
 project(ds_research_cpp)
 set(CMAKE_CXX_STANDARD 17)
-add_executable(ds_cpp src/main.cpp)
+add_executable(avg_tracker src/main.cpp)
 EOF
 
-### 📜 Scala (sbt)
+# Scala (sbt)
 cd ../scala
-mkdir -p src/main/scala
-
-# Create build.sbt in /scala/ with this content:
 cat <<EOF > build.sbt
-name := "ds-research-scala"
+name := "ds-scala"
 version := "0.1"
 scalaVersion := "3.3.0"
 EOF
+```
 
----
+## Building and Running
 
-### Final Repository Layout
-data-structures/
-├── .gitignore          # Global ignore (IDEs, venv, target, build)
-├── cpp/
-│   ├── CMakeLists.txt
-│   └── src/main.cpp
-├── python/
-│   ├── pyproject.toml
-│   ├── .venv/
-│   └── src/ds/
-├── rust/
-│   ├── Cargo.toml
-│   └── src/main.rs
-└── scala/
-    ├── build.sbt
-    └── src/main/scala/
+| Language | Directory | Run |
+|----------|-----------|-----|
+| Python   | `python/` | `cd python && uv run main.py` |
+| C++      | `cpp/`    | `cd cpp && cmake -B build && cmake --build build && ./build/avg_tracker` |
+| Rust     | `rust/`   | `cd rust && cargo run` |
+| Scala    | `scala/`  | `cd scala && sbt run` |
 
-# Data Structures Research: Master Setup & Execution Guide
+### Prerequisites
 
-## 1. Environment Initialization
+- **Python**: [uv](https://docs.astral.sh/uv/)
+- **C++**: CMake ≥ 3.20, a C++17 compiler
+- **Rust**: [rustup](https://rustup.rs/) (edition 2024)
+- **Scala**: JDK 11+, [sbt](https://www.scala-sbt.org/)
 
-### 🐍 Python (uv)
-cd python
-uv init --lib
-uv venv
-mv src/python src/ds
-# Set 'name = "ds"' in pyproject.toml
-uv pip install -e .
+## Language Notes
 
-### 🦀 Rust (Cargo)
-cd ../rust
-cargo init --bin
+Each implementation uses the same imperative, mutable style to keep comparisons fair across languages.
 
-### 🛠️ C++ (CMake)
-cd ../cpp
-mkdir src
-# Create CMakeLists.txt:
-echo 'cmake_minimum_required(VERSION 3.20)
-project(ds_research_cpp)
-set(CMAKE_CXX_STANDARD 17)
-add_executable(ds_cpp src/main.cpp)' > CMakeLists.txt
+### Python (High-Level / Interpreted)
 
-### 📜 Scala (sbt)
-cd ../scala
-mkdir -p src/main/scala
-# Create build.sbt:
-echo 'name := "ds-research-scala"
-version := "0.1"
-scalaVersion := "3.3.0"' > build.sbt
+- **Ease of use.** `collections.deque` with built-in `maxlen` handles eviction automatically, making the deque version the most concise of the four.
+- **Abstraction.** Memory management is entirely hidden; the code focuses on readability.
+- **Performance paradox.** `(head + 1) % max_size` is relatively fast in Python because the overhead of the interpreter dwarfs the cost of a single modulo.
 
----
+### C++ (Low-Level / Manual)
 
-## 2. Implementation & Running
+- **Hardware sensitivity (modulo).** `%` is an expensive arithmetic operation. If the buffer size is a power of two, `head & (size - 1)` avoids it entirely for a significant speed boost.
+- **Memory layout.** `std::deque` is a sequence of non-contiguous blocks; the circular buffer over `std::vector` wins on cache locality.
+- **Toolchain.** Requires the most scaffolding (CMake) but allows for the most aggressive optimizations (`-O3`).
 
-| Language | File Path | Run Command |
-| :--- | :--- | :--- |
-| **Python** | `python/src/ds/trackers.py` | `uv run main.py` |
-| **Rust** | `rust/src/main.rs` | `cargo run` |
-| **C++** | `cpp/src/main.cpp` | `cmake -B build && cmake --build build && ./build/ds_cpp` |
-| **Scala** | `scala/src/main/scala/Main.scala` | `sbt run` |
+### Rust (Safe / Explicit)
 
----
+- **Memory tuning.** `VecDeque` lives on the heap and can grow, while the circular buffer can be tuned for zero-allocation performance once initialized, staying fixed in memory.
+- **Allocation strategy.** `vec![0.0; size]` allocates once on the heap and stays that size forever — a fixed-size heap allocation that is extremely performant.
+- **Safety and Option types.** The `if let Some(old_val)` pattern forces the developer to acknowledge that `pop_front()` could return `None`, preventing runtime crashes.
+- **Explicit mutation.** Rust requires `&mut self`, making it crystal clear which methods modify internal state.
 
-## 3. The Core Algorithms (Logic Reference)
+### Scala (JVM / Hybrid)
 
-### Implementation A: Deque (Dynamic)
-- **Python**: `collections.deque(maxlen=size)`
-- **Rust**: `std::collections::VecDeque`
-- **C++**: `std::deque<double>`
-- **Scala**: `scala.collection.mutable.Queue`
-- **Logic**: Push to back; if size > limit, pop from front. $O(1)$ amortized.
+- **Style choice.** Uses `mutable.Queue` rather than a functional approach so the comparison stays apples-to-apples across all four languages.
+- **JVM lifecycle.** `sbt` has a long cold-start time, but the JIT compiler optimizes the code as it runs.
+- **Flexibility.** Scala offers the unique ability to switch to immutable collections if data persistence were a requirement.
 
-### Implementation B: Circular Buffer (Fixed)
-- **Data Structure**: Fixed-size Array/Vector.
-- **Logic**: Maintain a `head` index.
-- **Update**: `buffer[head] = val; head = (head + 1) % size;`
-- **Logic**: No shifting or resizing. Highest cache locality. $O(1)$ guaranteed.
-
----
-
-## 4. Directory Structure Recap
-data-structures/
-├── cpp/
-│   ├── CMakeLists.txt
-│   └── src/main.cpp
-├── python/
-│   ├── pyproject.toml
-│   ├── main.py
-│   └── src/ds/trackers.py
-├── rust/
-│   ├── Cargo.toml
-│   └── src/main.rs
-└── scala/
-    ├── build.sbt
-    └── src/main/scala/Main.scala
-
-# Data Structures Research: Comparative Observations (Final)
-
-### 🐍 Python (High-Level / Interpretive)
-* **Ease of Use:** Fastest implementation via `collections.deque` with built-in `maxlen`.
-* **Abstraction:** Memory management is entirely hidden; logic focuses on readability.
-* **Performance Paradox:** Surprisingly, `(head + 1) % max_size` is relatively fast in Python's high-level implementation compared to the overhead of other operations.
-
-### 🛠️ C++ (Low-Level / Manual)
-* **Hardware Sensitivity (Modulo):** In C++, the `%` operator is an "expensive" arithmetic operation. For high-performance research, if the buffer size is a power of 2, developers often use bitwise `&` to handle wrap-around for a significant speed boost.
-* **Memory Layout:** `std::deque` is a sequence of blocks; our manual **Circular Buffer** (using `std::vector`) is faster due to contiguous memory and better **cache locality**.
-* **Toolchain:** Requires the most scaffolding (CMake) but allows for the most aggressive optimizations (`-O3`).
-
-### 🦀 Rust (Safe / Explicit)
-* **Memory Tuning:** `VecDeque` lives on the heap and can grow, while our manual **Circular Buffer** can be tuned for zero-allocation performance once initialized, staying fixed in memory.
-* **Allocation Strategy:** `vec![0.0; size]` allocates once on the heap and stays that size forever. This "fixed-size heap allocation" is extremely performant.
-* **Safety & Option Types:** The `if let Some(old_val)` pattern in the Deque forces the developer to acknowledge that `pop_front()` could return `None`, preventing runtime crashes.
-* **Explicit Mutation:** Rust requires `&mut self`, making it crystal clear which methods modify the internal state.
-
-### 📜 Scala (JVM / Hybrid)
-* **Style Choice:** We chose a **"Java-like" mutable style** rather than a functional approach. This ensures the research comparison is fair (apples-to-apples) across all four languages by using the same underlying logic.
-* **JVM Lifecycle:** `sbt` has a long "cold-start" time, but the JIT (Just-In-Time) compiler optimizes the code as it runs.
-* **Flexibility:** While we used a mutable approach for performance parity, Scala offers the unique ability to switch to immutable collections if data persistence were a requirement.
-
----
-
-### Implementation Matrix Summary
+### Comparison Matrix
 
 | Feature | Python | C++ | Rust | Scala |
-| :--- | :--- | :--- | :--- | :--- |
-| **Logic Type** | Dynamic/Iterative | Low-level/Pointer-like | Safe/Explicit | JVM/Object-Oriented |
-| **Modulo %** | Efficiently hidden | Expensive (Manual) | Strict | Standard JVM |
-| **Memory Policy** | Automatic | Manual/RAII | Ownership-based | Garbage Collected |
-| **Style Used** | Imperative | Imperative | Imperative/Safe | Mutable (for Parity) |
-
+|---------|--------|-----|------|-------|
+| **Logic type** | Dynamic / Iterative | Low-level / Pointer-like | Safe / Explicit | JVM / Object-Oriented |
+| **Modulo `%`** | Efficiently hidden | Expensive (manual) | Strict | Standard JVM |
+| **Memory policy** | Automatic | Manual / RAII | Ownership-based | Garbage collected |
+| **Style used** | Imperative | Imperative | Imperative / Safe | Mutable (for parity) |

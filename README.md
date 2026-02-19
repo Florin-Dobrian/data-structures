@@ -181,3 +181,82 @@ data-structures/
 └── scala/
     ├── build.sbt
     └── src/main/scala/
+
+# Data Structures Research: Master Setup & Execution Guide
+
+## 1. Environment Initialization
+
+### 🐍 Python (uv)
+cd python
+uv init --lib
+uv venv
+mv src/python src/ds
+# Set 'name = "ds"' in pyproject.toml
+uv pip install -e .
+
+### 🦀 Rust (Cargo)
+cd ../rust
+cargo init --bin
+
+### 🛠️ C++ (CMake)
+cd ../cpp
+mkdir src
+# Create CMakeLists.txt:
+echo 'cmake_minimum_required(VERSION 3.20)
+project(ds_research_cpp)
+set(CMAKE_CXX_STANDARD 17)
+add_executable(ds_cpp src/main.cpp)' > CMakeLists.txt
+
+### 📜 Scala (sbt)
+cd ../scala
+mkdir -p src/main/scala
+# Create build.sbt:
+echo 'name := "ds-research-scala"
+version := "0.1"
+scalaVersion := "3.3.0"' > build.sbt
+
+---
+
+## 2. Implementation & Running
+
+| Language | File Path | Run Command |
+| :--- | :--- | :--- |
+| **Python** | `python/src/ds/trackers.py` | `uv run main.py` |
+| **Rust** | `rust/src/main.rs` | `cargo run` |
+| **C++** | `cpp/src/main.cpp` | `cmake -B build && cmake --build build && ./build/ds_cpp` |
+| **Scala** | `scala/src/main/scala/Main.scala` | `sbt run` |
+
+---
+
+## 3. The Core Algorithms (Logic Reference)
+
+### Implementation A: Deque (Dynamic)
+- **Python**: `collections.deque(maxlen=size)`
+- **Rust**: `std::collections::VecDeque`
+- **C++**: `std::deque<double>`
+- **Scala**: `scala.collection.mutable.Queue`
+- **Logic**: Push to back; if size > limit, pop from front. $O(1)$ amortized.
+
+### Implementation B: Circular Buffer (Fixed)
+- **Data Structure**: Fixed-size Array/Vector.
+- **Logic**: Maintain a `head` index.
+- **Update**: `buffer[head] = val; head = (head + 1) % size;`
+- **Logic**: No shifting or resizing. Highest cache locality. $O(1)$ guaranteed.
+
+---
+
+## 4. Directory Structure Recap
+data-structures/
+├── cpp/
+│   ├── CMakeLists.txt
+│   └── src/main.cpp
+├── python/
+│   ├── pyproject.toml
+│   ├── main.py
+│   └── src/ds/trackers.py
+├── rust/
+│   ├── Cargo.toml
+│   └── src/main.rs
+└── scala/
+    ├── build.sbt
+    └── src/main/scala/Main.scala

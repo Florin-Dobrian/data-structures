@@ -124,3 +124,60 @@ Cargo.lock
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
+
+# Data Structures: Environment Setup
+
+### 🐍 Python (uv)
+cd python
+uv init --lib           # Creates project and src/ layout
+uv venv                 # Creates the local virtual environment
+mv src/python src/ds    # Rename package to 'ds'
+# Ensure 'name = "ds"' in pyproject.toml
+uv pip install -e .     # Links src/ds to the venv
+
+### 🦀 Rust (Cargo)
+cd ../rust
+cargo init --bin        # Creates Cargo.toml and src/main.rs
+
+### 🛠️ C++ (CMake)
+cd ../cpp
+mkdir src
+touch src/main.cpp
+
+# Create CMakeLists.txt in /cpp/ with this content:
+cat <<EOF > CMakeLists.txt
+cmake_minimum_required(VERSION 3.20)
+project(ds_research_cpp)
+set(CMAKE_CXX_STANDARD 17)
+add_executable(ds_cpp src/main.cpp)
+EOF
+
+### 📜 Scala (sbt)
+cd ../scala
+mkdir -p src/main/scala
+
+# Create build.sbt in /scala/ with this content:
+cat <<EOF > build.sbt
+name := "ds-research-scala"
+version := "0.1"
+scalaVersion := "3.3.0"
+EOF
+
+---
+
+### Final Repository Layout
+data-structures/
+├── .gitignore          # Global ignore (IDEs, venv, target, build)
+├── cpp/
+│   ├── CMakeLists.txt
+│   └── src/main.cpp
+├── python/
+│   ├── pyproject.toml
+│   ├── .venv/
+│   └── src/ds/
+├── rust/
+│   ├── Cargo.toml
+│   └── src/main.rs
+└── scala/
+    ├── build.sbt
+    └── src/main/scala/

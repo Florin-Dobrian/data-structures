@@ -6,21 +6,30 @@ A polyglot playground for exploring data structures and containers across four l
 
 ```
 data-structures/
-├── python/          # uv + src layout
+├── python/              # uv + src layout
 │   ├── pyproject.toml
 │   ├── main.py
 │   └── src/datastructures/
-│       └── trackers.py
-├── cpp/             # CMake
+│       ├── avg_tracker.py
+│       └── lru_cache.py
+├── cpp/                 # CMake
 │   ├── CMakeLists.txt
-│   └── src/main.cpp
-├── rust/            # Cargo
+│   └── src/
+│       ├── main.cpp
+│       ├── avg_tracker.h
+│       └── lru_cache.h
+├── rust/                # Cargo
 │   ├── Cargo.toml
-│   └── src/main.rs
-└── scala/           # sbt
+│   └── src/
+│       ├── main.rs
+│       ├── avg_tracker.rs
+│       └── lru_cache.rs
+└── scala/               # sbt
     ├── build.sbt
     └── src/main/scala/
-        └── Main.scala
+        ├── Main.scala
+        ├── AvgTracker.scala
+        └── LruCache.scala
 ```
 
 ## Problems
@@ -34,6 +43,14 @@ Track the running average of up to the last *n* numbers added. Two implementatio
 **B — Circular Buffer.** A fixed-size array with a head index that wraps around via modulo. No allocation after init, no shifting. O(1) guaranteed with better cache locality.
 
 Both maintain a running sum so `get_average` is always O(1).
+
+### 2. LRU Cache
+
+A fixed-capacity key-value store that evicts the least recently used entry when full. Two implementations per language:
+
+**A — Standard library.** Uses each language's ordered map (`OrderedDict`, `std::list` + `std::unordered_map` with iterator storage, `HashMap` + `Vec`, `mutable.LinkedHashMap`). Leverages built-in ordering to track access recency.
+
+**B — Manual doubly linked list.** A hash map for O(1) key lookup combined with an index-based doubly linked list (node pool in a vector/array) for O(1) reordering and eviction. Sentinel head and tail nodes eliminate edge cases.
 
 ## Setup
 

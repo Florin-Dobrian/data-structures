@@ -1,4 +1,4 @@
-from datastructures.trackers import DequeTracker, CircularBufferTracker
+from datastructures.avg_tracker import DequeTracker, CircularBufferTracker
 
 for TrackerClass in [DequeTracker, CircularBufferTracker]:
     tracker = TrackerClass(size=3)

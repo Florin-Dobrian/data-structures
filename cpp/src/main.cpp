@@ -1,88 +1,58 @@
 #include <iostream>
 #include <vector>
-#include <deque>
-#include <numeric>
-#include <string>
+#include "avg_tracker.h"
+#include "lru_cache.h"
 
-/**
- * Implementation A: Using std::deque
- * std::deque is a double-ended queue that allows O(1) insertion/deletion at both ends.
- */
-class DequeTracker {
-private:
-    std::deque<double> buffer;
-    size_t max_size;
-    double current_sum = 0.0;
-
-public:
-    DequeTracker(size_t size) : max_size(size) {}
-
-    void add(double value) {
-        if (buffer.size() == max_size) {
-            current_sum -= buffer.front();
-            buffer.pop_front();
-        }
-        buffer.push_back(value);
-        current_sum += value;
-    }
-
-    double get_average() const {
-        if (buffer.empty()) return 0.0;
-        return current_sum / buffer.size();
-    }
-};
-
-/**
- * Implementation B: Manual Circular Buffer
- * Uses a fixed-size std::vector and an index to track the "head".
- */
-class CircularBufferTracker {
-private:
-    std::vector<double> buffer;
-    size_t max_size;
-    size_t head = 0;
-    size_t count = 0;
-    double current_sum = 0.0;
-
-public:
-    CircularBufferTracker(size_t size) : max_size(size), buffer(size, 0.0) {}
-
-    void add(double value) {
-        if (count == max_size) {
-            current_sum -= buffer[head];
-        } else {
-            count++;
-        }
-        buffer[head] = value;
-        current_sum += value;
-        head = (head + 1) % max_size;
-    }
-
-    double get_average() const {
-        if (count == 0) return 0.0;
-        return current_sum / count;
-    }
-};
-
-int main() {
+void run_trackers() {
+    std::cout << "=== Problem 1: Moving Average Tracker ===\n" << std::endl;
     int size = 3;
     std::vector<double> data = {10.0, 20.0, 30.0, 40.0, 50.0};
 
-    // Test Deque
     DequeTracker dt(size);
-    std::cout << "--- Testing DequeTracker ---" << std::endl;
+    std::cout << "--- DequeTracker ---" << std::endl;
     for (double val : data) {
         dt.add(val);
         std::cout << "Added " << val << ": Average = " << dt.get_average() << std::endl;
     }
 
-    // Test Circular Buffer
+    std::cout << std::endl;
+
     CircularBufferTracker cbt(size);
-    std::cout << "\n--- Testing CircularBufferTracker ---" << std::endl;
+    std::cout << "--- CircularBufferTracker ---" << std::endl;
     for (double val : data) {
         cbt.add(val);
         std::cout << "Added " << val << ": Average = " << cbt.get_average() << std::endl;
     }
 
+    std::cout << std::endl;
+}
+
+void run_lru_cache() {
+    std::cout << "=== Problem 2: LRU Cache ===\n" << std::endl;
+
+    auto test = [](auto& cache, const std::string& name) {
+        std::cout << "--- " << name << " ---" << std::endl;
+        cache.put(1, 1);
+        cache.put(2, 2);
+        std::cout << "get(1) = " << cache.get(1) << std::endl;
+        cache.put(3, 3);  // evicts key 2
+        std::cout << "get(2) = " << cache.get(2) << std::endl;
+        cache.put(4, 4);  // evicts key 1
+        std::cout << "get(1) = " << cache.get(1) << std::endl;
+        std::cout << "get(3) = " << cache.get(3) << std::endl;
+        std::cout << "get(4) = " << cache.get(4) << std::endl;
+        std::cout << std::endl;
+    };
+
+    ListLRUCache lc(2);
+    test(lc, "ListLRUCache");
+
+    ManualLRUCache mc(2);
+    test(mc, "ManualLRUCache");
+}
+
+int main() {
+    run_trackers();
+    run_lru_cache();
     return 0;
 }

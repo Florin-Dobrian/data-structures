@@ -16,7 +16,6 @@ __pycache__/
 /rust/target/
 # If you run cargo inside the rust folder, this covers it:
 target/
-Cargo.lock
 
 # --- Scala (sbt) ---
 /scala/target/

@@ -1,5 +1,5 @@
 [project]
-name = "ds"
+name = "datastructures"
 version = "0.1.0"
 description = "Data Structures"
 readme = "README.md"

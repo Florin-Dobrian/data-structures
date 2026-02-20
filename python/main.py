@@ -1,4 +1,4 @@
-from ds.trackers import DequeTracker, CircularBufferTracker
+from datastructures.trackers import DequeTracker, CircularBufferTracker
 
 def run_research():
     size = 3

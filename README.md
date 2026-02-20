@@ -9,7 +9,7 @@ data-structures/
 ├── python/          # uv + src layout
 │   ├── pyproject.toml
 │   ├── main.py
-│   └── src/ds/
+│   └── src/datastructures/
 │       └── trackers.py
 ├── cpp/             # CMake
 │   ├── CMakeLists.txt
@@ -50,8 +50,8 @@ mkdir -p data-structures/{python,cpp/src,rust,scala/src/main/scala}
 cd data-structures/python
 uv init --lib              # creates pyproject.toml + src/ layout
 uv venv                    # creates .venv
-mv src/python src/ds       # rename package to 'ds'
-uv pip install -e .        # link src/ds into the venv
+mv src/python src/datastructures  # rename package
+uv pip install -e .                # link src/datastructures into the venv
 
 # Rust (Cargo)
 cd ../rust
@@ -62,15 +62,15 @@ cd ../cpp
 touch src/main.cpp
 cat <<EOF > CMakeLists.txt
 cmake_minimum_required(VERSION 3.20)
-project(ds_research_cpp)
+project(datastructures_cpp)
 set(CMAKE_CXX_STANDARD 17)
-add_executable(avg_tracker src/main.cpp)
+add_executable(datastructures_cpp src/main.cpp)
 EOF
 
 # Scala (sbt)
 cd ../scala
 cat <<EOF > build.sbt
-name := "ds-scala"
+name := "datastructures-scala"
 version := "0.1"
 scalaVersion := "3.3.0"
 EOF
@@ -81,7 +81,7 @@ EOF
 | Language | Directory | Run |
 |----------|-----------|-----|
 | Python   | `python/` | `cd python && uv run main.py` |
-| C++      | `cpp/`    | `cd cpp && cmake -B build && cmake --build build && ./build/avg_tracker` |
+| C++      | `cpp/`    | `cd cpp && cmake -B build && cmake --build build && ./build/datastructures_cpp` |
 | Rust     | `rust/`   | `cd rust && cargo run` |
 | Scala    | `scala/`  | `cd scala && sbt run` |
 

@@ -17,6 +17,7 @@ uv init --lib              # creates pyproject.toml + src/ layout
 uv venv                    # creates .venv
 mv src/python src/datastructures  # rename package
 uv pip install -e .                # link src/datastructures into the venv
+uv add --dev ipykernel             # enable notebook support
 
 # Rust (Cargo)
 cd ../rust

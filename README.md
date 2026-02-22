@@ -11,25 +11,29 @@ data-structures/
 │   ├── main.py
 │   └── src/datastructures/
 │       ├── avg_tracker.py
-│       └── lru_cache.py
+│       ├── lru_cache.py
+│       └── next_greater.py
 ├── cpp/                 # CMake
 │   ├── CMakeLists.txt
 │   └── src/
 │       ├── main.cpp
 │       ├── avg_tracker.h
-│       └── lru_cache.h
+│       ├── lru_cache.h
+│       └── next_greater.h
 ├── rust/                # Cargo
 │   ├── Cargo.toml
 │   └── src/
 │       ├── main.rs
 │       ├── avg_tracker.rs
-│       └── lru_cache.rs
+│       ├── lru_cache.rs
+│       └── next_greater.rs
 └── scala/               # sbt
     ├── build.sbt
     └── src/main/scala/
         ├── Main.scala
         ├── AvgTracker.scala
-        └── LruCache.scala
+        ├── LruCache.scala
+        └── NextGreater.scala
 ```
 
 ## Problems
@@ -51,6 +55,14 @@ A fixed-capacity key-value store that evicts the least recently used entry when 
 **A — Standard library.** Uses each language's ordered map (`OrderedDict`, `std::list` + `std::unordered_map` with iterator storage, `HashMap` + `Vec`, `mutable.LinkedHashMap`). Leverages built-in ordering to track access recency.
 
 **B — Manual doubly linked list.** A hash map for O(1) key lookup combined with an index-based doubly linked list (node pool in a vector/array) for O(1) reordering and eviction. Sentinel head and tail nodes eliminate edge cases.
+
+### 3. Next Greater Element (Monotonic Stack)
+
+Given an array, find the next element that is strictly greater for each position. If none exists, return -1. Two implementations per language:
+
+**A — Standard stack.** Uses each language's idiomatic stack (`list` in Python, `std::stack` in C++, `Vec` in Rust, `mutable.Stack` in Scala). Iterate right to left, maintaining a monotonically decreasing stack — pop anything smaller or equal before pushing.
+
+**B — Manual array-backed stack.** A pre-allocated fixed-size array with a top index. Same algorithm, no dynamic resizing. Capacity is known upfront (at most n elements on the stack).
 
 ## Setup
 
@@ -97,10 +109,10 @@ EOF
 
 | Language | Directory | Run |
 |----------|-----------|-----|
-| Python   | `python/` | `cd python && uv run main.py` |
-| C++      | `cpp/`    | `cd cpp && cmake -B build && cmake --build build && ./build/datastructures_cpp` |
-| Rust     | `rust/`   | `cd rust && cargo run` |
-| Scala    | `scala/`  | `cd scala && sbt run` |
+| Python   | `python/` | `cd python && uv run main.py && cd ..` |
+| C++      | `cpp/`    | `cd cpp && cmake -B build && cmake --build build && ./build/datastructures_cpp && cd ..` |
+| Rust     | `rust/`   | `cd rust && cargo run && cd ..` |
+| Scala    | `scala/`  | `cd scala && sbt run && cd ..` |
 
 ### Prerequisites
 

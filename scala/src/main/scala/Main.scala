@@ -45,6 +45,25 @@ object Main extends App {
     testLru("ManualLRUCache", mc.get, mc.put)
   }
 
+  def runNextGreater(): Unit = {
+    println("=== Problem 3: Next Greater Element ===\n")
+    val data = Array(4, 5, 2, 25, 7, 18)
+
+    val solvers: List[(String, Array[Int] => Array[Int])] = List(
+      ("StackNextGreater", StackNextGreater.solve),
+      ("ManualStackNextGreater", ManualStackNextGreater.solve)
+    )
+
+    for ((name, solve) <- solvers) {
+      val result = solve(data)
+      println(s"--- $name ---")
+      println(s"Input:  [${data.mkString(", ")}]")
+      println(s"Output: [${result.mkString(", ")}]")
+      println()
+    }
+  }
+
   runTrackers()
   runLruCache()
+  runNextGreater()
 }

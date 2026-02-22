@@ -2,6 +2,7 @@
 #include <vector>
 #include "avg_tracker.h"
 #include "lru_cache.h"
+#include "next_greater.h"
 
 void run_trackers() {
     std::cout << "=== Problem 1: Moving Average Tracker ===\n" << std::endl;
@@ -51,8 +52,33 @@ void run_lru_cache() {
     test(mc, "ManualLRUCache");
 }
 
+void run_next_greater() {
+    std::cout << "=== Problem 3: Next Greater Element ===\n" << std::endl;
+    std::vector<int> data = {4, 5, 2, 25, 7, 18};
+
+    auto print_result = [&](const std::string& name, const std::vector<int>& result) {
+        std::cout << "--- " << name << " ---" << std::endl;
+        std::cout << "Input:  [";
+        for (size_t i = 0; i < data.size(); i++) {
+            if (i > 0) std::cout << ", ";
+            std::cout << data[i];
+        }
+        std::cout << "]" << std::endl;
+        std::cout << "Output: [";
+        for (size_t i = 0; i < result.size(); i++) {
+            if (i > 0) std::cout << ", ";
+            std::cout << result[i];
+        }
+        std::cout << "]" << std::endl << std::endl;
+    };
+
+    print_result("next_greater_std_stack", next_greater_std_stack(data));
+    print_result("next_greater_manual_stack", next_greater_manual_stack(data));
+}
+
 int main() {
     run_trackers();
     run_lru_cache();
+    run_next_greater();
     return 0;
 }

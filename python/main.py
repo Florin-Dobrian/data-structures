@@ -1,5 +1,6 @@
 from datastructures.avg_tracker import DequeTracker, CircularBufferTracker
 from datastructures.lru_cache import OrderedDictLRUCache, ManualLRUCache
+from datastructures.next_greater import next_greater_list_stack, next_greater_manual_stack
 
 
 def run_trackers():
@@ -34,6 +35,20 @@ def run_lru_cache():
         print()
 
 
+def run_next_greater():
+    print("=== Problem 3: Next Greater Element ===\n")
+    data = [4, 5, 2, 25, 7, 18]
+
+    for fn in [next_greater_list_stack, next_greater_manual_stack]:
+        name = fn.__name__
+        result = fn(data)
+        print(f"--- {name} ---")
+        print(f"Input:  {data}")
+        print(f"Output: {result}")
+        print()
+
+
 if __name__ == "__main__":
     run_trackers()
     run_lru_cache()
+    run_next_greater()

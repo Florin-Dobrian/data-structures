@@ -1,8 +1,10 @@
 mod avg_tracker;
 mod lru_cache;
+mod next_greater;
 
 use avg_tracker::{DequeTracker, CircularBufferTracker};
 use lru_cache::{SimpleVecLRUCache, ManualLRUCache};
+use next_greater::{next_greater_vec_stack, next_greater_manual_stack};
 
 fn run_trackers() {
     println!("=== Problem 1: Moving Average Tracker ===\n");
@@ -48,7 +50,26 @@ fn run_lru_cache() {
     test_lru!("ManualLRUCache", &mut ManualLRUCache::new(2));
 }
 
+fn run_next_greater() {
+    println!("=== Problem 3: Next Greater Element ===\n");
+    let data = vec![4, 5, 2, 25, 7, 18];
+
+    let fns: Vec<(&str, fn(&[i32]) -> Vec<i32>)> = vec![
+        ("next_greater_vec_stack", next_greater_vec_stack),
+        ("next_greater_manual_stack", next_greater_manual_stack),
+    ];
+
+    for (name, f) in &fns {
+        let result = f(&data);
+        println!("--- {} ---", name);
+        println!("Input:  {:?}", data);
+        println!("Output: {:?}", result);
+        println!();
+    }
+}
+
 fn main() {
     run_trackers();
     run_lru_cache();
+    run_next_greater();
 }

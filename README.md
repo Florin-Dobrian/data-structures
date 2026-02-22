@@ -114,6 +114,8 @@ EOF
 | Rust     | `rust/`   | `cd rust && cargo run && cd ..` |
 | Scala    | `scala/`  | `cd scala && sbt run && cd ..` |
 
+The Python package is installed in editable mode, so you can also experiment interactively with any of the code in a Jupyter notebook or a PyCharm notebook — just create an `.ipynb` file in the `python/` directory and import from `datastructures`.
+
 ### Prerequisites
 
 - **Python**: [uv](https://docs.astral.sh/uv/)

@@ -3,6 +3,8 @@ from collections import deque
 class DequeTracker:
     """Implementation A: Using a dynamic Double-Ended Queue."""
     def __init__(self, size: int):
+        if size < 1:
+            raise ValueError(f"size must be at least 1, got {size}")
         self.size = size
         self.buffer = deque(maxlen=size)
         self.current_sum = 0.0
@@ -22,6 +24,8 @@ class DequeTracker:
 class CircularBufferTracker:
     """Implementation B: Using a fixed-size list with manual index wrapping."""
     def __init__(self, size: int):
+        if size < 1:
+            raise ValueError(f"size must be at least 1, got {size}")
         self.size = size
         self.buffer = [0.0] * size
         self.head = 0

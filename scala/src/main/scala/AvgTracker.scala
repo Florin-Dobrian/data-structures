@@ -4,6 +4,8 @@ import scala.collection.mutable
  * Implementation A: Using a Mutable Queue
  */
 class DequeTracker(size: Int) {
+  require(size >= 1, s"size must be at least 1, got $size")
+
   private val buffer = mutable.Queue[Double]()
   private var currentSum: Double = 0.0
 
@@ -24,6 +26,8 @@ class DequeTracker(size: Int) {
  * Implementation B: Manual Circular Buffer
  */
 class CircularBufferTracker(size: Int) {
+  require(size >= 1, s"size must be at least 1, got $size")
+
   private val buffer = new Array[Double](size)
   private var head = 0
   private var count = 0

@@ -9,6 +9,7 @@ pub struct DequeTracker {
 
 impl DequeTracker {
     pub fn new(size: usize) -> Self {
+        assert!(size >= 1, "size must be at least 1, got {}", size);
         Self {
             size,
             buffer: VecDeque::with_capacity(size),
@@ -45,6 +46,7 @@ pub struct CircularBufferTracker {
 
 impl CircularBufferTracker {
     pub fn new(size: usize) -> Self {
+        assert!(size >= 1, "size must be at least 1, got {}", size);
         Self {
             size,
             buffer: vec![0.0; size],

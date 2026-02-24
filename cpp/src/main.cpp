@@ -72,8 +72,10 @@ void run_next_greater() {
         std::cout << "]" << std::endl << std::endl;
     };
 
-    print_result("next_greater_std_stack", next_greater_std_stack(data));
-    print_result("next_greater_manual_stack", next_greater_manual_stack(data));
+    print_result("next_greater_right_to_left", next_greater_right_to_left(data));
+    print_result("next_greater_left_to_right", next_greater_left_to_right(data));
+    print_result("next_greater_right_to_left_manual", next_greater_right_to_left_manual(data));
+    print_result("next_greater_left_to_right_manual", next_greater_left_to_right_manual(data));
 }
 
 int main() {

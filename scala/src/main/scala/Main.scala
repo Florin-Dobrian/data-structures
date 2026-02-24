@@ -50,8 +50,10 @@ object Main extends App {
     val data = Array(4, 5, 2, 25, 7, 18)
 
     val solvers: List[(String, Array[Int] => Array[Int])] = List(
-      ("StackNextGreater", StackNextGreater.solve),
-      ("ManualStackNextGreater", ManualStackNextGreater.solve)
+      ("RightToLeftNextGreater", RightToLeftNextGreater.solve),
+      ("LeftToRightNextGreater", LeftToRightNextGreater.solve),
+      ("RightToLeftManualNextGreater", RightToLeftManualNextGreater.solve),
+      ("LeftToRightManualNextGreater", LeftToRightManualNextGreater.solve)
     )
 
     for ((name, solve) <- solvers) {

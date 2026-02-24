@@ -4,7 +4,10 @@ mod next_greater;
 
 use avg_tracker::{DequeTracker, CircularBufferTracker};
 use lru_cache::{SimpleVecLRUCache, ManualLRUCache};
-use next_greater::{next_greater_vec_stack, next_greater_manual_stack};
+use next_greater::{
+    next_greater_right_to_left, next_greater_left_to_right,
+    next_greater_right_to_left_manual, next_greater_left_to_right_manual,
+};
 
 fn run_trackers() {
     println!("=== Problem 1: Moving Average Tracker ===\n");
@@ -55,8 +58,10 @@ fn run_next_greater() {
     let data = vec![4, 5, 2, 25, 7, 18];
 
     let fns: Vec<(&str, fn(&[i32]) -> Vec<i32>)> = vec![
-        ("next_greater_vec_stack", next_greater_vec_stack),
-        ("next_greater_manual_stack", next_greater_manual_stack),
+        ("next_greater_right_to_left", next_greater_right_to_left),
+        ("next_greater_left_to_right", next_greater_left_to_right),
+        ("next_greater_right_to_left_manual", next_greater_right_to_left_manual),
+        ("next_greater_left_to_right_manual", next_greater_left_to_right_manual),
     ];
 
     for (name, f) in &fns {

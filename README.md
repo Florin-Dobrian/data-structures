@@ -58,11 +58,17 @@ A fixed-capacity key-value store that evicts the least recently used entry when 
 
 ### 3. Next Greater Element (Monotonic Stack)
 
-Given an array, find the next element that is strictly greater for each position. If none exists, return -1. Two implementations per language:
+Given an array, find the next element that is strictly greater for each position. If none exists, return -1. Four implementations per language (two directions × two stack types):
 
-**A — Standard stack.** Uses each language's idiomatic stack (`std::stack` in C++, `list` in Python, `mutable.Stack` in Scala, `Vec` in Rust). Iterate right to left, maintaining a monotonically decreasing stack — pop anything smaller or equal before pushing.
+**A — Standard stack** (`std::stack` in C++, `list` in Python, `mutable.Stack` in Scala, `Vec` in Rust):
 
-**B — Manual array-backed stack.** A pre-allocated fixed-size array with a top index. Same algorithm, no dynamic resizing. Capacity is known upfront (at most n elements on the stack).
+- **A1 — Right-to-left: "what is my next greater?"** Iterate from the end, maintaining a stack of *values*. For each element, pop anything smaller or equal, then the stack top is the answer. Values suffice because we can fill in each result immediately — we already know what's to the right.
+- **A2 — Left-to-right: "whose answer am I?"** Iterate from the start, maintaining a stack of *indices* for elements whose answer hasn't been found yet. When the current element is greater than what's on top, pop and record. Indices are needed because we don't know an element's answer when we first see it.
+
+**B — Manual array-backed stack** (pre-allocated fixed-size array with a top index, no dynamic resizing):
+
+- **B1 — Right-to-left.** Same algorithm as A1, fixed-capacity stack.
+- **B2 — Left-to-right.** Same algorithm as A2, fixed-capacity stack.
 
 ## Initial Setup
 

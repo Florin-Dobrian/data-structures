@@ -6,6 +6,7 @@ from datastructures.next_greater import (
 )
 from datastructures.merge_k_sorted import merge_k_heapq, merge_k_manual_heap
 from datastructures.time_kv_store import BisectTimeKV, ManualBinarySearchTimeKV
+from datastructures.first_duplicate import first_duplicate_hash_set, first_duplicate_sorted_set
 
 
 def run_trackers():
@@ -91,9 +92,28 @@ def run_time_kv_store():
         print()
 
 
+def run_first_duplicate():
+    print("=== Problem 6: First Duplicate in a Stream ===\n")
+
+    cases = [
+        ("has duplicate",    [2, 1, 3, 5, 3, 2]),
+        ("immediate repeat", [7, 7, 1, 2]),
+        ("no duplicate",     [1, 2, 3, 4, 5]),
+        ("empty",            []),
+    ]
+
+    for fn in [first_duplicate_hash_set, first_duplicate_sorted_set]:
+        name = fn.__name__
+        print(f"--- {name} ---")
+        for label, data in cases:
+            print(f"{label}: {data} -> {fn(data)}")
+        print()
+
+
 if __name__ == "__main__":
     run_trackers()
     run_lru_cache()
     run_next_greater()
     run_merge_k_sorted()
     run_time_kv_store()
+    run_first_duplicate()

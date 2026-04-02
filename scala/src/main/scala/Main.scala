@@ -117,9 +117,34 @@ object Main extends App {
     }
   }
 
+  def runFirstDuplicate(): Unit = {
+    println("=== Problem 6: First Duplicate in a Stream ===\n")
+
+    val cases: List[(String, Array[Int])] = List(
+      ("has duplicate",    Array(2, 1, 3, 5, 3, 2)),
+      ("immediate repeat", Array(7, 7, 1, 2)),
+      ("no duplicate",     Array(1, 2, 3, 4, 5)),
+      ("empty",            Array[Int]())
+    )
+
+    val solvers: List[(String, Array[Int] => Int)] = List(
+      ("HashSetFirstDuplicate", HashSetFirstDuplicate.solve),
+      ("TreeSetFirstDuplicate", TreeSetFirstDuplicate.solve)
+    )
+
+    for ((name, solve) <- solvers) {
+      println(s"--- $name ---")
+      for ((label, data) <- cases) {
+        println(s"$label: [${data.mkString(", ")}] -> ${solve(data)}")
+      }
+      println()
+    }
+  }
+
   runTrackers()
   runLruCache()
   runNextGreater()
   runMergeKSorted()
   runTimeKvStore()
+  runFirstDuplicate()
 }

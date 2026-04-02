@@ -5,6 +5,7 @@
 #include "next_greater.h"
 #include "merge_k_sorted.h"
 #include "time_kv_store.h"
+#include "first_duplicate.h"
 
 void run_trackers() {
     std::cout << "=== Problem 1: Moving Average Tracker ===\n" << std::endl;
@@ -139,11 +140,46 @@ void run_time_kv_store() {
     test(mb, "ManualBinarySearchTimeKV");
 }
 
+void run_first_duplicate() {
+    std::cout << "=== Problem 6: First Duplicate in a Stream ===\n" << std::endl;
+
+    struct TestCase { std::string label; std::vector<int> data; };
+    std::vector<TestCase> cases = {
+        {"has duplicate",    {2, 1, 3, 5, 3, 2}},
+        {"immediate repeat", {7, 7, 1, 2}},
+        {"no duplicate",     {1, 2, 3, 4, 5}},
+        {"empty",            {}},
+    };
+
+    auto print_vec = [](const std::vector<int>& v) {
+        std::cout << "[";
+        for (size_t i = 0; i < v.size(); i++) {
+            if (i > 0) std::cout << ", ";
+            std::cout << v[i];
+        }
+        std::cout << "]";
+    };
+
+    auto run = [&](const std::string& name, int(*fn)(const std::vector<int>&)) {
+        std::cout << "--- " << name << " ---" << std::endl;
+        for (auto& tc : cases) {
+            std::cout << tc.label << ": ";
+            print_vec(tc.data);
+            std::cout << " -> " << fn(tc.data) << std::endl;
+        }
+        std::cout << std::endl;
+    };
+
+    run("first_duplicate_hash_set", first_duplicate_hash_set);
+    run("first_duplicate_sorted_set", first_duplicate_sorted_set);
+}
+
 int main() {
     run_trackers();
     run_lru_cache();
     run_next_greater();
     run_merge_k_sorted();
     run_time_kv_store();
+    run_first_duplicate();
     return 0;
 }

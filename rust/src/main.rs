@@ -3,6 +3,7 @@ mod lru_cache;
 mod next_greater;
 mod merge_k_sorted;
 mod time_kv_store;
+mod first_duplicate;
 
 use avg_tracker::{DequeTracker, CircularBufferTracker};
 use lru_cache::{SimpleVecLRUCache, ManualLRUCache};
@@ -12,6 +13,7 @@ use next_greater::{
 };
 use merge_k_sorted::{merge_k_binary_heap, merge_k_manual_heap};
 use time_kv_store::{BTreeMapTimeKV, ManualBinarySearchTimeKV};
+use first_duplicate::{first_duplicate_hash_set, first_duplicate_sorted_set};
 
 fn run_trackers() {
     println!("=== Problem 1: Moving Average Tracker ===\n");
@@ -125,10 +127,35 @@ fn run_time_kv_store() {
     test_kv!("ManualBinarySearchTimeKV", &mut ManualBinarySearchTimeKV::new());
 }
 
+fn run_first_duplicate() {
+    println!("=== Problem 6: First Duplicate in a Stream ===\n");
+
+    let cases: Vec<(&str, Vec<i32>)> = vec![
+        ("has duplicate",    vec![2, 1, 3, 5, 3, 2]),
+        ("immediate repeat", vec![7, 7, 1, 2]),
+        ("no duplicate",     vec![1, 2, 3, 4, 5]),
+        ("empty",            vec![]),
+    ];
+
+    let fns: Vec<(&str, fn(&[i32]) -> i32)> = vec![
+        ("first_duplicate_hash_set", first_duplicate_hash_set),
+        ("first_duplicate_sorted_set", first_duplicate_sorted_set),
+    ];
+
+    for (name, f) in &fns {
+        println!("--- {} ---", name);
+        for (label, data) in &cases {
+            println!("{}: {:?} -> {}", label, data, f(data));
+        }
+        println!();
+    }
+}
+
 fn main() {
     run_trackers();
     run_lru_cache();
     run_next_greater();
     run_merge_k_sorted();
     run_time_kv_store();
+    run_first_duplicate();
 }

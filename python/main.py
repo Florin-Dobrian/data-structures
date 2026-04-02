@@ -5,6 +5,7 @@ from datastructures.next_greater import (
     next_greater_right_to_left_manual, next_greater_left_to_right_manual,
 )
 from datastructures.merge_k_sorted import merge_k_heapq, merge_k_manual_heap
+from datastructures.time_kv_store import BisectTimeKV, ManualBinarySearchTimeKV
 
 
 def run_trackers():
@@ -66,8 +67,33 @@ def run_merge_k_sorted():
         print()
 
 
+def run_time_kv_store():
+    print("=== Problem 5: Time-Based Key-Value Store ===\n")
+
+    for kv in [BisectTimeKV(), ManualBinarySearchTimeKV()]:
+        name = kv.__class__.__name__
+        print(f"--- {name} ---")
+        kv.set("alice", "alice_v1", 1)
+        kv.set("alice", "alice_v2", 4)
+        kv.set("alice", "alice_v3", 7)
+        kv.set("bob",   "bob_v1",   2)
+        kv.set("bob",   "bob_v2",   5)
+
+        print(f'get(alice, 0) = "{kv.get("alice", 0)}"')
+        print(f'get(alice, 1) = "{kv.get("alice", 1)}"')
+        print(f'get(alice, 3) = "{kv.get("alice", 3)}"')
+        print(f'get(alice, 4) = "{kv.get("alice", 4)}"')
+        print(f'get(alice, 6) = "{kv.get("alice", 6)}"')
+        print(f'get(alice, 9) = "{kv.get("alice", 9)}"')
+        print(f'get(bob,   3) = "{kv.get("bob",   3)}"')
+        print(f'get(bob,   5) = "{kv.get("bob",   5)}"')
+        print(f'get(carol, 1) = "{kv.get("carol", 1)}"')
+        print()
+
+
 if __name__ == "__main__":
     run_trackers()
     run_lru_cache()
     run_next_greater()
     run_merge_k_sorted()
+    run_time_kv_store()

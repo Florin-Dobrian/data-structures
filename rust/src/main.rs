@@ -2,6 +2,7 @@ mod avg_tracker;
 mod lru_cache;
 mod next_greater;
 mod merge_k_sorted;
+mod time_kv_store;
 
 use avg_tracker::{DequeTracker, CircularBufferTracker};
 use lru_cache::{SimpleVecLRUCache, ManualLRUCache};
@@ -10,6 +11,7 @@ use next_greater::{
     next_greater_right_to_left_manual, next_greater_left_to_right_manual,
 };
 use merge_k_sorted::{merge_k_binary_heap, merge_k_manual_heap};
+use time_kv_store::{BTreeMapTimeKV, ManualBinarySearchTimeKV};
 
 fn run_trackers() {
     println!("=== Problem 1: Moving Average Tracker ===\n");
@@ -93,9 +95,40 @@ fn run_merge_k_sorted() {
     }
 }
 
+fn run_time_kv_store() {
+    println!("=== Problem 5: Time-Based Key-Value Store ===\n");
+
+    macro_rules! test_kv {
+        ($name:expr, $kv:expr) => {{
+            let kv = $kv;
+            println!("--- {} ---", $name);
+            kv.set("alice", "alice_v1", 1);
+            kv.set("alice", "alice_v2", 4);
+            kv.set("alice", "alice_v3", 7);
+            kv.set("bob",   "bob_v1",   2);
+            kv.set("bob",   "bob_v2",   5);
+
+            println!("get(alice, 0) = \"{}\"", kv.get("alice", 0));
+            println!("get(alice, 1) = \"{}\"", kv.get("alice", 1));
+            println!("get(alice, 3) = \"{}\"", kv.get("alice", 3));
+            println!("get(alice, 4) = \"{}\"", kv.get("alice", 4));
+            println!("get(alice, 6) = \"{}\"", kv.get("alice", 6));
+            println!("get(alice, 9) = \"{}\"", kv.get("alice", 9));
+            println!("get(bob,   3) = \"{}\"", kv.get("bob",   3));
+            println!("get(bob,   5) = \"{}\"", kv.get("bob",   5));
+            println!("get(carol, 1) = \"{}\"", kv.get("carol", 1));
+            println!();
+        }};
+    }
+
+    test_kv!("BTreeMapTimeKV", &mut BTreeMapTimeKV::new());
+    test_kv!("ManualBinarySearchTimeKV", &mut ManualBinarySearchTimeKV::new());
+}
+
 fn main() {
     run_trackers();
     run_lru_cache();
     run_next_greater();
     run_merge_k_sorted();
+    run_time_kv_store();
 }

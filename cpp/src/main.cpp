@@ -4,6 +4,7 @@
 #include "lru_cache.h"
 #include "next_greater.h"
 #include "merge_k_sorted.h"
+#include "time_kv_store.h"
 
 void run_trackers() {
     std::cout << "=== Problem 1: Moving Average Tracker ===\n" << std::endl;
@@ -108,10 +109,41 @@ void run_merge_k_sorted() {
     print_result("merge_k_manual_heap", merge_k_manual_heap(lists));
 }
 
+void run_time_kv_store() {
+    std::cout << "=== Problem 5: Time-Based Key-Value Store ===\n" << std::endl;
+
+    auto test = [](auto& kv, const std::string& name) {
+        std::cout << "--- " << name << " ---" << std::endl;
+        kv.set("alice", "alice_v1", 1);
+        kv.set("alice", "alice_v2", 4);
+        kv.set("alice", "alice_v3", 7);
+        kv.set("bob",   "bob_v1",   2);
+        kv.set("bob",   "bob_v2",   5);
+
+        std::cout << "get(alice, 0) = \"" << kv.get("alice", 0) << "\"" << std::endl;
+        std::cout << "get(alice, 1) = \"" << kv.get("alice", 1) << "\"" << std::endl;
+        std::cout << "get(alice, 3) = \"" << kv.get("alice", 3) << "\"" << std::endl;
+        std::cout << "get(alice, 4) = \"" << kv.get("alice", 4) << "\"" << std::endl;
+        std::cout << "get(alice, 6) = \"" << kv.get("alice", 6) << "\"" << std::endl;
+        std::cout << "get(alice, 9) = \"" << kv.get("alice", 9) << "\"" << std::endl;
+        std::cout << "get(bob,   3) = \"" << kv.get("bob",   3) << "\"" << std::endl;
+        std::cout << "get(bob,   5) = \"" << kv.get("bob",   5) << "\"" << std::endl;
+        std::cout << "get(carol, 1) = \"" << kv.get("carol", 1) << "\"" << std::endl;
+        std::cout << std::endl;
+    };
+
+    StdMapTimeKV sm;
+    test(sm, "StdMapTimeKV");
+
+    ManualBinarySearchTimeKV mb;
+    test(mb, "ManualBinarySearchTimeKV");
+}
+
 int main() {
     run_trackers();
     run_lru_cache();
     run_next_greater();
     run_merge_k_sorted();
+    run_time_kv_store();
     return 0;
 }

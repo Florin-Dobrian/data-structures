@@ -84,8 +84,42 @@ object Main extends App {
     }
   }
 
+  def runTimeKvStore(): Unit = {
+    println("=== Problem 5: Time-Based Key-Value Store ===\n")
+
+    val solvers: List[(String, (String, String, Int) => Unit, (String, Int) => String)] = {
+      val tm = new TreeMapTimeKV
+      val mb = new ManualBinarySearchTimeKV
+      List(
+        ("TreeMapTimeKV", tm.set, tm.get),
+        ("ManualBinarySearchTimeKV", mb.set, mb.get)
+      )
+    }
+
+    for ((name, set, get) <- solvers) {
+      println(s"--- $name ---")
+      set("alice", "alice_v1", 1)
+      set("alice", "alice_v2", 4)
+      set("alice", "alice_v3", 7)
+      set("bob",   "bob_v1",   2)
+      set("bob",   "bob_v2",   5)
+
+      println(s"""get(alice, 0) = "${get("alice", 0)}"""")
+      println(s"""get(alice, 1) = "${get("alice", 1)}"""")
+      println(s"""get(alice, 3) = "${get("alice", 3)}"""")
+      println(s"""get(alice, 4) = "${get("alice", 4)}"""")
+      println(s"""get(alice, 6) = "${get("alice", 6)}"""")
+      println(s"""get(alice, 9) = "${get("alice", 9)}"""")
+      println(s"""get(bob,   3) = "${get("bob",   3)}"""")
+      println(s"""get(bob,   5) = "${get("bob",   5)}"""")
+      println(s"""get(carol, 1) = "${get("carol", 1)}"""")
+      println()
+    }
+  }
+
   runTrackers()
   runLruCache()
   runNextGreater()
   runMergeKSorted()
+  runTimeKvStore()
 }

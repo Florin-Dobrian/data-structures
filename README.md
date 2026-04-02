@@ -13,7 +13,8 @@ data-structures/
 │       ├── avg_tracker.h
 │       ├── lru_cache.h
 │       ├── next_greater.h
-│       └── merge_k_sorted.h
+│       ├── merge_k_sorted.h
+│       └── time_kv_store.h
 ├── python/              # uv + src layout
 │   ├── pyproject.toml
 │   ├── main.py
@@ -21,7 +22,8 @@ data-structures/
 │       ├── avg_tracker.py
 │       ├── lru_cache.py
 │       ├── next_greater.py
-│       └── merge_k_sorted.py
+│       ├── merge_k_sorted.py
+│       └── time_kv_store.py
 ├── scala/               # sbt
 │   ├── build.sbt
 │   └── src/main/scala/
@@ -29,7 +31,8 @@ data-structures/
 │       ├── AvgTracker.scala
 │       ├── LruCache.scala
 │       ├── NextGreater.scala
-│       └── MergeKSorted.scala
+│       ├── MergeKSorted.scala
+│       └── TimeKvStore.scala
 └── rust/                # Cargo
     ├── Cargo.toml
     └── src/
@@ -37,7 +40,8 @@ data-structures/
         ├── avg_tracker.rs
         ├── lru_cache.rs
         ├── next_greater.rs
-        └── merge_k_sorted.rs
+        ├── merge_k_sorted.rs
+        └── time_kv_store.rs
 ```
 
 ## Problems
@@ -81,6 +85,14 @@ Given k sorted arrays, merge them into a single sorted array. Two implementation
 **A — Standard library heap.** Uses each language's priority queue (`std::priority_queue` with `std::greater` in C++, `heapq` in Python, `mutable.PriorityQueue` with reversed `Ordering` in Scala, `BinaryHeap` with `Reverse` in Rust). Push `(value, list_index, element_index)` tuples; the smallest value always comes out first. Each pop-and-push is O(log k).
 
 **B — Manual binary min-heap.** A pre-allocated array with sift-up and sift-down operations. Same algorithm, fixed capacity of k (one entry per input list). Shows how a heap works under the hood: parent at `(i-1)/2`, children at `2i+1` and `2i+2`.
+
+### 5. Time-Based Key-Value Store (Sorted Map / Binary Search)
+
+Store key-value pairs with timestamps. Given a key and a timestamp, retrieve the value with the largest timestamp ≤ the query timestamp. Timestamps are inserted in strictly increasing order per key. Two implementations per language:
+
+**A — Standard library sorted map.** Uses each language's sorted/tree map (`std::map` in C++, `bisect` on sorted lists in Python, `mutable.TreeMap` in Scala, `BTreeMap` in Rust). Leverages built-in ordering for O(log n) floor lookups — `upper_bound` and step back in C++, `bisect_right` in Python, `to(t).lastOption` in Scala, `range(..=t).next_back()` in Rust.
+
+**B — Manual binary search.** A hash map where each key maps to a flat append-only list of `(timestamp, value)` pairs. Because timestamps arrive in strictly increasing order, the list stays sorted for free. A hand-written binary search finds the rightmost timestamp ≤ the query. O(1) amortized insert, O(log n) lookup.
 
 ## Initial Setup
 

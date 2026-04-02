@@ -4,6 +4,7 @@ mod next_greater;
 mod merge_k_sorted;
 mod time_kv_store;
 mod first_duplicate;
+mod prefix_trie;
 
 use avg_tracker::{DequeTracker, CircularBufferTracker};
 use lru_cache::{SimpleVecLRUCache, ManualLRUCache};
@@ -14,6 +15,7 @@ use next_greater::{
 use merge_k_sorted::{merge_k_binary_heap, merge_k_manual_heap};
 use time_kv_store::{BTreeMapTimeKV, ManualBinarySearchTimeKV};
 use first_duplicate::{first_duplicate_hash_set, first_duplicate_sorted_set};
+use prefix_trie::{HashMapTrie, ArrayTrie};
 
 fn run_trackers() {
     println!("=== Problem 1: Moving Average Tracker ===\n");
@@ -151,6 +153,34 @@ fn run_first_duplicate() {
     }
 }
 
+fn run_prefix_trie() {
+    println!("=== Problem 7: Prefix Trie ===\n");
+
+    macro_rules! test_trie {
+        ($name:expr, $trie:expr) => {{
+            let trie = $trie;
+            println!("--- {} ---", $name);
+            trie.insert("apple");
+            trie.insert("app");
+            trie.insert("apricot");
+            trie.insert("banana");
+
+            println!("search(apple)   = {}", trie.search("apple"));
+            println!("search(app)     = {}", trie.search("app"));
+            println!("search(ap)      = {}", trie.search("ap"));
+            println!("search(banana)  = {}", trie.search("banana"));
+            println!("search(band)    = {}", trie.search("band"));
+            println!("starts_with(ap) = {}", trie.starts_with("ap"));
+            println!("starts_with(ba) = {}", trie.starts_with("ba"));
+            println!("starts_with(ca) = {}", trie.starts_with("ca"));
+            println!();
+        }};
+    }
+
+    test_trie!("HashMapTrie", &mut HashMapTrie::new());
+    test_trie!("ArrayTrie", &mut ArrayTrie::new());
+}
+
 fn main() {
     run_trackers();
     run_lru_cache();
@@ -158,4 +188,5 @@ fn main() {
     run_merge_k_sorted();
     run_time_kv_store();
     run_first_duplicate();
+    run_prefix_trie();
 }

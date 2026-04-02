@@ -7,6 +7,7 @@ from datastructures.next_greater import (
 from datastructures.merge_k_sorted import merge_k_heapq, merge_k_manual_heap
 from datastructures.time_kv_store import BisectTimeKV, ManualBinarySearchTimeKV
 from datastructures.first_duplicate import first_duplicate_hash_set, first_duplicate_sorted_set
+from datastructures.prefix_trie import HashMapTrie, ArrayTrie
 
 
 def run_trackers():
@@ -110,6 +111,28 @@ def run_first_duplicate():
         print()
 
 
+def run_prefix_trie():
+    print("=== Problem 7: Prefix Trie ===\n")
+
+    for trie in [HashMapTrie(), ArrayTrie()]:
+        name = trie.__class__.__name__
+        print(f"--- {name} ---")
+        trie.insert("apple")
+        trie.insert("app")
+        trie.insert("apricot")
+        trie.insert("banana")
+
+        print(f"search(apple)   = {trie.search('apple')}")
+        print(f"search(app)     = {trie.search('app')}")
+        print(f"search(ap)      = {trie.search('ap')}")
+        print(f"search(banana)  = {trie.search('banana')}")
+        print(f"search(band)    = {trie.search('band')}")
+        print(f"starts_with(ap) = {trie.starts_with('ap')}")
+        print(f"starts_with(ba) = {trie.starts_with('ba')}")
+        print(f"starts_with(ca) = {trie.starts_with('ca')}")
+        print()
+
+
 if __name__ == "__main__":
     run_trackers()
     run_lru_cache()
@@ -117,3 +140,4 @@ if __name__ == "__main__":
     run_merge_k_sorted()
     run_time_kv_store()
     run_first_duplicate()
+    run_prefix_trie()

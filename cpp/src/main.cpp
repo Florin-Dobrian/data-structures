@@ -6,6 +6,7 @@
 #include "merge_k_sorted.h"
 #include "time_kv_store.h"
 #include "first_duplicate.h"
+#include "prefix_trie.h"
 
 void run_trackers() {
     std::cout << "=== Problem 1: Moving Average Tracker ===\n" << std::endl;
@@ -174,6 +175,34 @@ void run_first_duplicate() {
     run("first_duplicate_sorted_set", first_duplicate_sorted_set);
 }
 
+void run_prefix_trie() {
+    std::cout << "=== Problem 7: Prefix Trie ===\n" << std::endl;
+
+    auto test = [](auto& trie, const std::string& name) {
+        std::cout << "--- " << name << " ---" << std::endl;
+        trie.insert("apple");
+        trie.insert("app");
+        trie.insert("apricot");
+        trie.insert("banana");
+
+        std::cout << "search(apple)   = " << std::boolalpha << trie.search("apple")   << std::endl;
+        std::cout << "search(app)     = " << std::boolalpha << trie.search("app")     << std::endl;
+        std::cout << "search(ap)      = " << std::boolalpha << trie.search("ap")      << std::endl;
+        std::cout << "search(banana)  = " << std::boolalpha << trie.search("banana")  << std::endl;
+        std::cout << "search(band)    = " << std::boolalpha << trie.search("band")    << std::endl;
+        std::cout << "starts_with(ap) = " << std::boolalpha << trie.starts_with("ap") << std::endl;
+        std::cout << "starts_with(ba) = " << std::boolalpha << trie.starts_with("ba") << std::endl;
+        std::cout << "starts_with(ca) = " << std::boolalpha << trie.starts_with("ca") << std::endl;
+        std::cout << std::endl;
+    };
+
+    HashMapTrie hm;
+    test(hm, "HashMapTrie");
+
+    ArrayTrie at;
+    test(at, "ArrayTrie");
+}
+
 int main() {
     run_trackers();
     run_lru_cache();
@@ -181,5 +210,6 @@ int main() {
     run_merge_k_sorted();
     run_time_kv_store();
     run_first_duplicate();
+    run_prefix_trie();
     return 0;
 }

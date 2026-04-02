@@ -141,10 +141,42 @@ object Main extends App {
     }
   }
 
+  def runPrefixTrie(): Unit = {
+    println("=== Problem 7: Prefix Trie ===\n")
+
+    val tries: List[(String, String => Unit, String => Boolean, String => Boolean)] = {
+      val hm = new HashMapTrie
+      val at = new ArrayTrie
+      List(
+        ("HashMapTrie", hm.insert, hm.search, hm.startsWith),
+        ("ArrayTrie",   at.insert, at.search, at.startsWith)
+      )
+    }
+
+    for ((name, insert, search, startsWith) <- tries) {
+      println(s"--- $name ---")
+      insert("apple")
+      insert("app")
+      insert("apricot")
+      insert("banana")
+
+      println(s"search(apple)   = ${search("apple")}")
+      println(s"search(app)     = ${search("app")}")
+      println(s"search(ap)      = ${search("ap")}")
+      println(s"search(banana)  = ${search("banana")}")
+      println(s"search(band)    = ${search("band")}")
+      println(s"starts_with(ap) = ${startsWith("ap")}")
+      println(s"starts_with(ba) = ${startsWith("ba")}")
+      println(s"starts_with(ca) = ${startsWith("ca")}")
+      println()
+    }
+  }
+
   runTrackers()
   runLruCache()
   runNextGreater()
   runMergeKSorted()
   runTimeKvStore()
   runFirstDuplicate()
+  runPrefixTrie()
 }

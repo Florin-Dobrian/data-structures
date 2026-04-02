@@ -15,7 +15,8 @@ data-structures/
 │       ├── next_greater.h
 │       ├── merge_k_sorted.h
 │       ├── time_kv_store.h
-│       └── first_duplicate.h
+│       ├── first_duplicate.h
+│       └── prefix_trie.h
 ├── python/              # uv + src layout
 │   ├── pyproject.toml
 │   ├── main.py
@@ -25,7 +26,8 @@ data-structures/
 │       ├── next_greater.py
 │       ├── merge_k_sorted.py
 │       ├── time_kv_store.py
-│       └── first_duplicate.py
+│       ├── first_duplicate.py
+│       └── prefix_trie.py
 ├── scala/               # sbt
 │   ├── build.sbt
 │   └── src/main/scala/
@@ -35,7 +37,8 @@ data-structures/
 │       ├── NextGreater.scala
 │       ├── MergeKSorted.scala
 │       ├── TimeKvStore.scala
-│       └── FirstDuplicate.scala
+│       ├── FirstDuplicate.scala
+│       └── PrefixTrie.scala
 └── rust/                # Cargo
     ├── Cargo.toml
     └── src/
@@ -45,7 +48,8 @@ data-structures/
         ├── next_greater.rs
         ├── merge_k_sorted.rs
         ├── time_kv_store.rs
-        └── first_duplicate.rs
+        ├── first_duplicate.rs
+        └── prefix_trie.rs
 ```
 
 ## Problems
@@ -60,6 +64,8 @@ Track the running average of up to the last *n* numbers added. Two implementatio
 
 Both maintain a running sum so `get_average` is always O(1).
 
+**Why it's interesting:** The deque and circular buffer solve the same problem with very different memory strategies. The deque is dynamically sized and handled by the standard library; the circular buffer is a fixed-size array with modulo arithmetic. This contrast surfaces hardware-level differences: cache locality, allocation cost, and whether `%` is worth worrying about (it is in C++, it isn't in Python).
+
 ### 2. LRU Cache
 
 A fixed-capacity key-value store that evicts the least recently used entry when full. Two implementations per language:
@@ -67,6 +73,8 @@ A fixed-capacity key-value store that evicts the least recently used entry when 
 **A — Standard library.** Uses each language's ordered map (`std::list` + `std::unordered_map` with iterator storage, `OrderedDict`, `mutable.LinkedHashMap`, `HashMap` + `Vec`). Leverages built-in ordering to track access recency.
 
 **B — Manual doubly linked list.** A hash map for O(1) key lookup combined with an index-based doubly linked list (node pool in a vector/array) for O(1) reordering and eviction. Sentinel head and tail nodes eliminate edge cases.
+
+**Why it's interesting:** The stdlib version reveals how differently each language handles ordered maps — C++ stores iterators, Python has `OrderedDict`, Scala has `LinkedHashMap`, and Rust has no ordered map at all (it falls back to `HashMap` + `Vec` with O(n) moves). The manual version is the repo's first index-based linked list, a pattern that becomes essential in Rust where pointer-based doubly linked lists hit ownership walls.
 
 ### 3. Next Greater Element (Monotonic Stack)
 
@@ -82,6 +90,8 @@ Given an array, find the next element that is strictly greater for each position
 - **B1 — Right-to-left.** Same algorithm as A1, fixed-capacity stack.
 - **B2 — Left-to-right.** Same algorithm as A2, fixed-capacity stack.
 
+**Why it's interesting:** The monotonic stack is a pattern that shows up everywhere (stock span, histogram area, temperature problems). Each language handles stack-like usage differently — Python and Rust just use their dynamic arrays, while C++ and Scala have dedicated stack types. The right-to-left vs. left-to-right contrast illuminates a deeper algorithmic insight: whether you push values or indices depends on whether you know the answer when you visit an element or only discover it later.
+
 ### 4. Merge K Sorted Lists (Priority Queue / Heap)
 
 Given k sorted arrays, merge them into a single sorted array. Two implementations per language:
@@ -89,6 +99,8 @@ Given k sorted arrays, merge them into a single sorted array. Two implementation
 **A — Standard library heap.** Uses each language's priority queue (`std::priority_queue` with `std::greater` in C++, `heapq` in Python, `mutable.PriorityQueue` with reversed `Ordering` in Scala, `BinaryHeap` with `Reverse` in Rust). Push `(value, list_index, element_index)` tuples; the smallest value always comes out first. Each pop-and-push is O(log k).
 
 **B — Manual binary min-heap.** A pre-allocated array with sift-up and sift-down operations. Same algorithm, fixed capacity of k (one entry per input list). Shows how a heap works under the hood: parent at `(i-1)/2`, children at `2i+1` and `2i+2`.
+
+**Why it's interesting:** Custom comparators work very differently across the four languages. Python uses tuples for natural ordering, C++ uses a comparator template parameter, Rust wraps in `Reverse`, and Scala passes an `Ordering`. All four languages default to max-heaps except Python — the flip mechanisms are where the real language contrast lives.
 
 ### 5. Time-Based Key-Value Store (Sorted Map / Binary Search)
 
@@ -98,6 +110,8 @@ Store key-value pairs with timestamps. Given a key and a timestamp, retrieve the
 
 **B — Manual binary search.** A hash map where each key maps to a flat append-only list of `(timestamp, value)` pairs. Because timestamps arrive in strictly increasing order, the list stays sorted for free. A hand-written binary search finds the rightmost timestamp ≤ the query. O(1) amortized insert, O(log n) lookup.
 
+**Why it's interesting:** Exercises ordered map operations — specifically floor/ceiling lookups. C++, Rust, and Scala all have built-in tree maps; Python doesn't, so you use `bisect` on sorted lists. Good contrast between languages with rich stdlib sorted collections and those without. The manual version is nearly identical across all four languages because the sorted-append trick sidesteps the usual "keep it sorted" problem entirely.
+
 ### 6. First Duplicate in a Stream (Hash Set)
 
 Given a stream of values, find and return the first value that appears a second time. If no duplicate exists, return -1. Two implementations per language:
@@ -105,6 +119,18 @@ Given a stream of values, find and return the first value that appears a second 
 **A — Hash set.** Uses each language's hash set (`std::unordered_set` in C++, `set` in Python, `mutable.HashSet` in Scala, `HashSet` in Rust). Insert each value; if it already exists, that's the answer. O(n) expected time. C++, Scala, and Rust all return a boolean from `insert` indicating whether the element was new — no separate lookup needed. Python uses `in` before `add`.
 
 **B — Sorted set.** Uses each language's sorted/tree set (`std::set` in C++, `bisect` on a sorted list in Python, `mutable.TreeSet` in Scala, `BTreeSet` in Rust). Same algorithm, but the underlying container maintains sorted order. Insert and lookup are O(log n) instead of O(1) amortized, making overall time O(n log n). The tradeoff: iteration yields elements in sorted order, and worst-case performance is more predictable (no hash collisions).
+
+**Why it's interesting:** The simplest exercise in the repo, but it earns its place because hash sets are used constantly and the APIs differ. C++, Scala, and Rust all return a boolean from `insert`; Python's `set.add` returns `None`. Pairing hash set with sorted set highlights the ordered-vs-unordered tradeoff and reveals Python's stdlib gap — no sorted set, so `bisect` + `insort` on a list gives O(n²) worst case.
+
+### 7. Prefix Trie (Custom Tree Structure)
+
+Implement insert, search (exact match), and starts-with (prefix matching) on a collection of strings. No standard trie exists in any of the four languages — both implementations are built from scratch. Two implementations per language:
+
+**A — Hash map trie (flexible alphabet).** Each node stores children in a hash map (`std::unordered_map<char, unique_ptr<Node>>` in C++, `dict` in Python, `mutable.HashMap` in Scala, `HashMap<u8, Box<Node>>` in Rust). Supports any character set without wasting memory on unused slots. O(L) per operation where L is the word length.
+
+**B — Fixed-array trie (lowercase ASCII only).** Each node stores children in a fixed array of 26 slots, one per letter a–z. Lookup is a direct index (`c - 'a'`), trading memory (26 slots per node regardless of usage) for speed (no hashing, no collisions). In Rust, the array version uses an index-based node pool (the same pattern as the LRU cache) rather than `Box`, sidestepping ownership constraints entirely.
+
+**Why it's interesting:** Forces you to build a recursive/nested mutable structure from scratch — no language has a standard trie. This is trivial in Python (nested dicts) and Scala (nested mutable maps), straightforward in C++ (`unique_ptr`), and most educational in Rust: the hash map version uses `Box` for exclusive ownership, while the array version uses an index-based node pool. The trie is the clearest example in the repo of how Rust's ownership model shapes data structure design.
 
 ## Initial Setup
 
@@ -160,6 +186,7 @@ Each implementation uses the same imperative, mutable style to keep comparisons 
 - **Dedicated containers.** C++ has `std::stack` as a dedicated adapter, while Python and Rust just use their dynamic arrays. `std::priority_queue` requires a comparator template parameter (`std::greater`) to flip from max-heap to min-heap.
 - **Sorted map floor lookups.** `std::map::upper_bound` returns the first element strictly greater than the query; stepping the iterator back one gives the floor entry. This two-step pattern is idiomatic but easy to get wrong at boundaries.
 - **Insert-returns-boolean.** Both `std::unordered_set::insert` and `std::set::insert` return a `pair<iterator, bool>` where `.second` indicates whether the element was new — no separate `find` needed for the first-duplicate problem.
+- **Recursive ownership via `unique_ptr`.** The trie uses `unique_ptr<Node>` for children, giving automatic recursive cleanup when a node is destroyed. This is the most natural C++ approach — straightforward, no manual `delete`, and no shared ownership needed.
 - **Toolchain.** Requires the most scaffolding (CMake) but allows for the most aggressive optimizations (`-O3`).
 
 ### Python (High-Level / Interpreted)
@@ -169,11 +196,12 @@ Each implementation uses the same imperative, mutable style to keep comparisons 
 - **No sorted containers in stdlib.** Python is the consistent outlier for sorted data structures. There is no sorted map or sorted set, so the time-based KV store uses `bisect` on parallel sorted lists, and the first-duplicate sorted-set variant uses `bisect_left` + `insort` on a plain list. The `insort` approach is O(n) per insertion due to shifting, giving O(n²) worst case — a real penalty at scale.
 - **Tuple-based heap ordering.** `heapq` compares tuples lexicographically, so `(value, list_index, element_index)` gives natural min-heap behavior for free — no custom comparator needed.
 - **Set uses `in` before `add`.** Unlike C++, Scala, and Rust where `insert` returns a boolean, Python's `set.add` returns `None`, so the first-duplicate solution checks `val in seen` before adding.
+- **Nested dicts for tries.** The hash map trie is arguably the most Pythonic implementation in the repo — nesting `dict[str, Node]` is natural and concise. No memory management, no pointers, no ownership — just dicts all the way down.
 - **Performance paradox.** `(head + 1) % max_size` is relatively fast in Python because the overhead of the interpreter dwarfs the cost of a single modulo.
 
 ### Scala (JVM / Hybrid)
 
-- **Style choice.** Uses `mutable.Queue`, `mutable.LinkedHashMap`, `mutable.Stack`, `mutable.PriorityQueue`, `mutable.TreeMap`, `mutable.HashSet`, and `mutable.TreeSet` rather than functional approaches so the comparison stays apples-to-apples across all four languages.
+- **Style choice.** Uses `mutable.Queue`, `mutable.LinkedHashMap`, `mutable.Stack`, `mutable.PriorityQueue`, `mutable.TreeMap`, `mutable.HashSet`, `mutable.TreeSet`, and `mutable.HashMap` (for trie children) rather than functional approaches so the comparison stays apples-to-apples across all four languages.
 - **Reversed Ordering for min-heap.** Scala's `mutable.PriorityQueue` is a max-heap by default. Flipping to min-heap requires passing a reversed `Ordering`, which is more verbose than Rust's `Reverse` wrapper but more flexible for complex key types.
 - **TreeMap floor lookups.** `tsMap.to(timestamp).lastOption` returns a view of all entries up to and including the key, then grabs the last one. Clean and readable, but creates an intermediate view.
 - **Insert-returns-boolean.** Both `mutable.HashSet.add` and `mutable.TreeSet.add` return `true` if the element was new, `false` if it already existed — same pattern as C++ and Rust.
@@ -185,6 +213,7 @@ Each implementation uses the same imperative, mutable style to keep comparisons 
 - **Memory tuning.** `VecDeque` lives on the heap and can grow, while the circular buffer can be tuned for zero-allocation performance once initialized, staying fixed in memory.
 - **Allocation strategy.** `vec![0.0; size]` allocates once on the heap and stays that size forever — a fixed-size heap allocation that is extremely performant.
 - **Index-based linked list.** Rust's ownership model makes pointer-based doubly linked lists painful (`Rc<RefCell<>>` or `unsafe`). The index-based node pool with sentinel nodes sidesteps this entirely — the same approach used in C++, but in Rust it's the *only* ergonomic option.
+- **Two approaches to recursive structures.** The trie shows both Rust strategies: the hash map version uses `Box<Node>` for exclusive ownership (clean, idiomatic, no shared mutation needed), while the array version uses an index-based node pool (the same pattern as the LRU cache). `Box` works here because each child has exactly one parent — no `Rc<RefCell<>>` needed.
 - **Reverse wrapper for min-heap.** `BinaryHeap` is a max-heap by default. Wrapping entries in `std::cmp::Reverse` is the idiomatic flip — simpler than C++'s template comparator or Scala's reversed `Ordering`.
 - **BTreeMap floor lookups.** `range(..=timestamp).next_back()` returns an iterator over all entries up to and including the key, then grabs the last one. The range syntax `..=` (inclusive) is a Rust-specific feature that makes this very readable.
 - **Insert-returns-boolean.** Both `HashSet::insert` and `BTreeSet::insert` return `true` if the value was new — the same pattern as C++ and Scala, making the first-duplicate code nearly identical across three of the four languages.
@@ -197,6 +226,7 @@ Each implementation uses the same imperative, mutable style to keep comparisons 
 - **Sorted-append trick** (problem 5). When timestamps arrive in strictly increasing order, the manual implementation across all four languages is nearly identical: append to a flat list and binary-search on lookup. The sorted-map implementation is where languages diverge — each spells the floor lookup differently.
 - **API convergence on sets** (problem 6). C++, Scala, and Rust all offer `insert`-returns-boolean on both hash and sorted sets, making their first-duplicate implementations nearly identical. Python stands apart with its `in` + `add` pattern.
 - **Python's stdlib gaps.** Python is the consistent outlier for sorted containers. Problems 5 and 6 both require workarounds (`bisect` on plain lists) where the other three languages have dedicated sorted map and sorted set types.
+- **Recursive structure ergonomics** (problem 7). The trie is trivially expressed in Python (nested dicts) and Scala (nested mutable maps). C++ uses `unique_ptr` for clean ownership. Rust offers two paths: `Box` for exclusive ownership (hash map trie) and index-based pools for arena-style allocation (array trie). The trie is the clearest example in the repo of how Rust's ownership model shapes data structure design.
 
 ### Comparison Matrix
 

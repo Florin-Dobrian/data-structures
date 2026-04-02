@@ -4,6 +4,7 @@ from datastructures.next_greater import (
     next_greater_right_to_left, next_greater_left_to_right,
     next_greater_right_to_left_manual, next_greater_left_to_right_manual,
 )
+from datastructures.merge_k_sorted import merge_k_heapq, merge_k_manual_heap
 
 
 def run_trackers():
@@ -52,7 +53,21 @@ def run_next_greater():
         print()
 
 
+def run_merge_k_sorted():
+    print("=== Problem 4: Merge K Sorted Lists ===\n")
+    lists = [[1, 4, 7], [2, 5, 8], [3, 6, 9]]
+
+    for fn in [merge_k_heapq, merge_k_manual_heap]:
+        name = fn.__name__
+        result = fn(lists)
+        print(f"--- {name} ---")
+        print(f"Input:  {lists}")
+        print(f"Output: {result}")
+        print()
+
+
 if __name__ == "__main__":
     run_trackers()
     run_lru_cache()
     run_next_greater()
+    run_merge_k_sorted()

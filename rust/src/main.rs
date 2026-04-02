@@ -1,6 +1,7 @@
 mod avg_tracker;
 mod lru_cache;
 mod next_greater;
+mod merge_k_sorted;
 
 use avg_tracker::{DequeTracker, CircularBufferTracker};
 use lru_cache::{SimpleVecLRUCache, ManualLRUCache};
@@ -8,6 +9,7 @@ use next_greater::{
     next_greater_right_to_left, next_greater_left_to_right,
     next_greater_right_to_left_manual, next_greater_left_to_right_manual,
 };
+use merge_k_sorted::{merge_k_binary_heap, merge_k_manual_heap};
 
 fn run_trackers() {
     println!("=== Problem 1: Moving Average Tracker ===\n");
@@ -73,8 +75,27 @@ fn run_next_greater() {
     }
 }
 
+fn run_merge_k_sorted() {
+    println!("=== Problem 4: Merge K Sorted Lists ===\n");
+    let lists = vec![vec![1, 4, 7], vec![2, 5, 8], vec![3, 6, 9]];
+
+    let fns: Vec<(&str, fn(&[Vec<i32>]) -> Vec<i32>)> = vec![
+        ("merge_k_binary_heap", merge_k_binary_heap),
+        ("merge_k_manual_heap", merge_k_manual_heap),
+    ];
+
+    for (name, f) in &fns {
+        let result = f(&lists);
+        println!("--- {} ---", name);
+        println!("Input:  {:?}", lists);
+        println!("Output: {:?}", result);
+        println!();
+    }
+}
+
 fn main() {
     run_trackers();
     run_lru_cache();
     run_next_greater();
+    run_merge_k_sorted();
 }

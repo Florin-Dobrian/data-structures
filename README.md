@@ -12,28 +12,32 @@ data-structures/
 │       ├── main.cpp
 │       ├── avg_tracker.h
 │       ├── lru_cache.h
-│       └── next_greater.h
+│       ├── next_greater.h
+│       └── merge_k_sorted.h
 ├── python/              # uv + src layout
 │   ├── pyproject.toml
 │   ├── main.py
 │   └── src/datastructures/
 │       ├── avg_tracker.py
 │       ├── lru_cache.py
-│       └── next_greater.py
+│       ├── next_greater.py
+│       └── merge_k_sorted.py
 ├── scala/               # sbt
 │   ├── build.sbt
 │   └── src/main/scala/
 │       ├── Main.scala
 │       ├── AvgTracker.scala
 │       ├── LruCache.scala
-│       └── NextGreater.scala
+│       ├── NextGreater.scala
+│       └── MergeKSorted.scala
 └── rust/                # Cargo
     ├── Cargo.toml
     └── src/
         ├── main.rs
         ├── avg_tracker.rs
         ├── lru_cache.rs
-        └── next_greater.rs
+        ├── next_greater.rs
+        └── merge_k_sorted.rs
 ```
 
 ## Problems
@@ -69,6 +73,14 @@ Given an array, find the next element that is strictly greater for each position
 
 - **B1 — Right-to-left.** Same algorithm as A1, fixed-capacity stack.
 - **B2 — Left-to-right.** Same algorithm as A2, fixed-capacity stack.
+
+### 4. Merge K Sorted Lists (Priority Queue / Heap)
+
+Given k sorted arrays, merge them into a single sorted array. Two implementations per language:
+
+**A — Standard library heap.** Uses each language's priority queue (`std::priority_queue` with `std::greater` in C++, `heapq` in Python, `mutable.PriorityQueue` with reversed `Ordering` in Scala, `BinaryHeap` with `Reverse` in Rust). Push `(value, list_index, element_index)` tuples; the smallest value always comes out first. Each pop-and-push is O(log k).
+
+**B — Manual binary min-heap.** A pre-allocated array with sift-up and sift-down operations. Same algorithm, fixed capacity of k (one entry per input list). Shows how a heap works under the hood: parent at `(i-1)/2`, children at `2i+1` and `2i+2`.
 
 ## Initial Setup
 

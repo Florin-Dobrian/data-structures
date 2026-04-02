@@ -3,6 +3,7 @@
 #include "avg_tracker.h"
 #include "lru_cache.h"
 #include "next_greater.h"
+#include "merge_k_sorted.h"
 
 void run_trackers() {
     std::cout << "=== Problem 1: Moving Average Tracker ===\n" << std::endl;
@@ -78,9 +79,39 @@ void run_next_greater() {
     print_result("next_greater_left_to_right_manual", next_greater_left_to_right_manual(data));
 }
 
+void run_merge_k_sorted() {
+    std::cout << "=== Problem 4: Merge K Sorted Lists ===\n" << std::endl;
+    std::vector<std::vector<int>> lists = {{1, 4, 7}, {2, 5, 8}, {3, 6, 9}};
+
+    auto print_result = [&](const std::string& name, const std::vector<int>& result) {
+        std::cout << "--- " << name << " ---" << std::endl;
+        std::cout << "Input:  [";
+        for (size_t i = 0; i < lists.size(); i++) {
+            if (i > 0) std::cout << ", ";
+            std::cout << "[";
+            for (size_t j = 0; j < lists[i].size(); j++) {
+                if (j > 0) std::cout << ", ";
+                std::cout << lists[i][j];
+            }
+            std::cout << "]";
+        }
+        std::cout << "]" << std::endl;
+        std::cout << "Output: [";
+        for (size_t i = 0; i < result.size(); i++) {
+            if (i > 0) std::cout << ", ";
+            std::cout << result[i];
+        }
+        std::cout << "]" << std::endl << std::endl;
+    };
+
+    print_result("merge_k_priority_queue", merge_k_priority_queue(lists));
+    print_result("merge_k_manual_heap", merge_k_manual_heap(lists));
+}
+
 int main() {
     run_trackers();
     run_lru_cache();
     run_next_greater();
+    run_merge_k_sorted();
     return 0;
 }

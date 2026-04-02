@@ -65,7 +65,27 @@ object Main extends App {
     }
   }
 
+  def runMergeKSorted(): Unit = {
+    println("=== Problem 4: Merge K Sorted Lists ===\n")
+    val lists = Array(Array(1, 4, 7), Array(2, 5, 8), Array(3, 6, 9))
+
+    val solvers: List[(String, Array[Array[Int]] => Array[Int])] = List(
+      ("PriorityQueueMergeK", PriorityQueueMergeK.solve),
+      ("ManualHeapMergeK", ManualHeapMergeK.solve)
+    )
+
+    val inputStr = lists.map(a => s"[${a.mkString(", ")}]").mkString("[", ", ", "]")
+    for ((name, solve) <- solvers) {
+      val result = solve(lists)
+      println(s"--- $name ---")
+      println(s"Input:  $inputStr")
+      println(s"Output: [${result.mkString(", ")}]")
+      println()
+    }
+  }
+
   runTrackers()
   runLruCache()
   runNextGreater()
+  runMergeKSorted()
 }

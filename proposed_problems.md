@@ -13,28 +13,19 @@ A catalog of candidate problems for the data-structures repo. Each targets a spe
 | 5 | Time-Based Key-Value Store | sorted map, binary search on sorted vector |
 | 6 | First Duplicate in a Stream | hash set, sorted/tree set |
 | 7 | Prefix Trie | hash map trie, fixed-array trie |
-
-## Candidates
-
-### 8. Connected Components (Union-Find / Disjoint Set)
-
-Given n nodes and a list of edges, count the number of connected components.
-
-**Containers:** A flat array/vector with path compression and union by rank. Minimal container usage but a fundamental algorithmic data structure.
-
-**Why it's interesting:** The data structure itself is just an array, so the implementation is nearly identical across all four languages. The value is in seeing how each language handles the mutable array manipulation (index arithmetic, bounds checking in Rust). Two implementations: one with path compression + union by rank (optimized), one naive with simple parent tracking (to show the performance difference).
+| 8 | Connected Components | union-find (naive + path compression / union by rank) |
 
 ## Recommendations
 
-Problems 1 through 7 are implemented. The repo covers: arrays, deques, hash maps, linked lists, stacks, heaps, sorted maps, hash sets, sorted sets, and tries.
+All eight problems are implemented. The repo covers: arrays, deques, hash maps, linked lists, stacks, heaps, sorted maps, hash sets, sorted sets, tries, and union-find — a comprehensive tour of the container families and algorithmic data structures you reach for in practice.
 
-Problem 8 (union-find) is the sole remaining candidate. It's useful as a fundamental algorithmic structure but doesn't exercise new containers — it's just a flat array with index arithmetic.
+### Suggested order (for new readers)
 
-### Suggested order
-
-1. ~~Next Greater Element (monotonic stack)~~ — done
-2. ~~Merge K Sorted Lists (priority queue)~~ — done
-3. ~~Time-Based Key-Value Store (sorted map)~~ — done
-4. ~~First Duplicate in a Stream (hash set)~~ — done
-5. ~~Prefix Trie (custom tree structure)~~ — done
-6. Connected Components — as needed
+1. Moving Average Tracker — deque vs. circular buffer, simplest starting point
+2. LRU Cache — hash map + linked list, introduces index-based node pools
+3. Next Greater Element — monotonic stack pattern, values vs. indices insight
+4. Merge K Sorted Lists — priority queue, cross-language comparator contrast
+5. Time-Based Key-Value Store — sorted map, floor lookups, Python stdlib gaps
+6. First Duplicate in a Stream — hash set vs. sorted set, API convergence
+7. Prefix Trie — recursive ownership, Rust Box vs. index-based pools
+8. Connected Components — union-find, path compression, Rust &mut self on queries

@@ -7,6 +7,7 @@
 #include "time_kv_store.h"
 #include "first_duplicate.h"
 #include "prefix_trie.h"
+#include "union_find.h"
 
 void run_trackers() {
     std::cout << "=== Problem 1: Moving Average Tracker ===\n" << std::endl;
@@ -203,6 +204,41 @@ void run_prefix_trie() {
     test(at, "ArrayTrie");
 }
 
+void run_union_find() {
+    std::cout << "=== Problem 8: Connected Components (Union-Find) ===\n" << std::endl;
+
+    // Graph: 5 nodes, edges form two components: {0,1,2} and {3,4}
+    int n = 5;
+    std::vector<std::pair<int,int>> edges = {{0,1}, {1,2}, {3,4}};
+
+    auto test = [&](auto& uf, const std::string& name) {
+        std::cout << "--- " << name << " ---" << std::endl;
+        std::cout << "Nodes: " << n << ", Edges: [";
+        for (size_t i = 0; i < edges.size(); i++) {
+            if (i > 0) std::cout << ", ";
+            std::cout << "(" << edges[i].first << "," << edges[i].second << ")";
+        }
+        std::cout << "]" << std::endl;
+
+        for (auto& [a, b] : edges) {
+            uf.unite(a, b);
+        }
+
+        std::cout << "Components: " << uf.count() << std::endl;
+        std::cout << "find(0) = " << uf.find(0) << ", find(2) = " << uf.find(2)
+                  << " (same: " << std::boolalpha << (uf.find(0) == uf.find(2)) << ")" << std::endl;
+        std::cout << "find(0) = " << uf.find(0) << ", find(3) = " << uf.find(3)
+                  << " (same: " << std::boolalpha << (uf.find(0) == uf.find(3)) << ")" << std::endl;
+        std::cout << std::endl;
+    };
+
+    NaiveUnionFind nuf(n);
+    test(nuf, "NaiveUnionFind");
+
+    RankedUnionFind ruf(n);
+    test(ruf, "RankedUnionFind");
+}
+
 int main() {
     run_trackers();
     run_lru_cache();
@@ -211,5 +247,6 @@ int main() {
     run_time_kv_store();
     run_first_duplicate();
     run_prefix_trie();
+    run_union_find();
     return 0;
 }

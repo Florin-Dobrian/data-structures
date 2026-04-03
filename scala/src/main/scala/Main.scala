@@ -172,6 +172,39 @@ object Main extends App {
     }
   }
 
+  def runUnionFind(): Unit = {
+    println("=== Problem 8: Connected Components (Union-Find) ===\n")
+
+    val n = 5
+    val edges = List((0, 1), (1, 2), (3, 4))
+
+    val solvers: List[(String, Int => { def find(x: Int): Int; def unite(a: Int, b: Int): Unit; def count: Int })] = List()
+
+    // Test NaiveUnionFind
+    {
+      val uf = new NaiveUnionFind(n)
+      println("--- NaiveUnionFind ---")
+      println(s"Nodes: $n, Edges: [${edges.map { case (a, b) => s"($a,$b)" }.mkString(", ")}]")
+      for ((a, b) <- edges) uf.unite(a, b)
+      println(s"Components: ${uf.count}")
+      println(s"find(0) = ${uf.find(0)}, find(2) = ${uf.find(2)} (same: ${uf.find(0) == uf.find(2)})")
+      println(s"find(0) = ${uf.find(0)}, find(3) = ${uf.find(3)} (same: ${uf.find(0) == uf.find(3)})")
+      println()
+    }
+
+    // Test RankedUnionFind
+    {
+      val uf = new RankedUnionFind(n)
+      println("--- RankedUnionFind ---")
+      println(s"Nodes: $n, Edges: [${edges.map { case (a, b) => s"($a,$b)" }.mkString(", ")}]")
+      for ((a, b) <- edges) uf.unite(a, b)
+      println(s"Components: ${uf.count}")
+      println(s"find(0) = ${uf.find(0)}, find(2) = ${uf.find(2)} (same: ${uf.find(0) == uf.find(2)})")
+      println(s"find(0) = ${uf.find(0)}, find(3) = ${uf.find(3)} (same: ${uf.find(0) == uf.find(3)})")
+      println()
+    }
+  }
+
   runTrackers()
   runLruCache()
   runNextGreater()
@@ -179,4 +212,5 @@ object Main extends App {
   runTimeKvStore()
   runFirstDuplicate()
   runPrefixTrie()
+  runUnionFind()
 }

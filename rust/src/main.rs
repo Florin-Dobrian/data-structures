@@ -5,6 +5,7 @@ mod merge_k_sorted;
 mod time_kv_store;
 mod first_duplicate;
 mod prefix_trie;
+mod union_find;
 
 use avg_tracker::{DequeTracker, CircularBufferTracker};
 use lru_cache::{SimpleVecLRUCache, ManualLRUCache};
@@ -16,6 +17,7 @@ use merge_k_sorted::{merge_k_binary_heap, merge_k_manual_heap};
 use time_kv_store::{BTreeMapTimeKV, ManualBinarySearchTimeKV};
 use first_duplicate::{first_duplicate_hash_set, first_duplicate_sorted_set};
 use prefix_trie::{HashMapTrie, ArrayTrie};
+use union_find::{NaiveUnionFind, RankedUnionFind};
 
 fn run_trackers() {
     println!("=== Problem 1: Moving Average Tracker ===\n");
@@ -181,6 +183,47 @@ fn run_prefix_trie() {
     test_trie!("ArrayTrie", &mut ArrayTrie::new());
 }
 
+fn run_union_find() {
+    println!("=== Problem 8: Connected Components (Union-Find) ===\n");
+
+    let n = 5;
+    let edges = vec![(0, 1), (1, 2), (3, 4)];
+
+    // NaiveUnionFind: find() takes &self (no path compression)
+    {
+        let mut uf = NaiveUnionFind::new(n);
+        println!("--- NaiveUnionFind ---");
+        println!("Nodes: {}, Edges: {:?}", n, edges);
+        for &(a, b) in &edges {
+            uf.unite(a, b);
+        }
+        println!("Components: {}", uf.count());
+        let (f0, f2) = (uf.find(0), uf.find(2));
+        println!("find(0) = {}, find(2) = {} (same: {})", f0, f2, f0 == f2);
+        let (f0, f3) = (uf.find(0), uf.find(3));
+        println!("find(0) = {}, find(3) = {} (same: {})", f0, f3, f0 == f3);
+        println!();
+    }
+
+    // RankedUnionFind: find() takes &mut self (path compression mutates)
+    {
+        let mut uf = RankedUnionFind::new(n);
+        println!("--- RankedUnionFind ---");
+        println!("Nodes: {}, Edges: {:?}", n, edges);
+        for &(a, b) in &edges {
+            uf.unite(a, b);
+        }
+        println!("Components: {}", uf.count());
+        let f0 = uf.find(0);
+        let f2 = uf.find(2);
+        println!("find(0) = {}, find(2) = {} (same: {})", f0, f2, f0 == f2);
+        let f0 = uf.find(0);
+        let f3 = uf.find(3);
+        println!("find(0) = {}, find(3) = {} (same: {})", f0, f3, f0 == f3);
+        println!();
+    }
+}
+
 fn main() {
     run_trackers();
     run_lru_cache();
@@ -189,4 +232,5 @@ fn main() {
     run_time_kv_store();
     run_first_duplicate();
     run_prefix_trie();
+    run_union_find();
 }

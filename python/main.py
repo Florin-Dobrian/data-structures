@@ -8,6 +8,7 @@ from datastructures.merge_k_sorted import merge_k_heapq, merge_k_manual_heap
 from datastructures.time_kv_store import BisectTimeKV, ManualBinarySearchTimeKV
 from datastructures.first_duplicate import first_duplicate_hash_set, first_duplicate_sorted_set
 from datastructures.prefix_trie import HashMapTrie, ArrayTrie
+from datastructures.union_find import NaiveUnionFind, RankedUnionFind
 
 
 def run_trackers():
@@ -133,6 +134,28 @@ def run_prefix_trie():
         print()
 
 
+def run_union_find():
+    print("=== Problem 8: Connected Components (Union-Find) ===\n")
+
+    n = 5
+    edges = [(0, 1), (1, 2), (3, 4)]
+
+    for uf in [NaiveUnionFind(n), RankedUnionFind(n)]:
+        name = uf.__class__.__name__
+        print(f"--- {name} ---")
+        print(f"Nodes: {n}, Edges: {edges}")
+
+        for a, b in edges:
+            uf.unite(a, b)
+
+        print(f"Components: {uf.count()}")
+        print(f"find(0) = {uf.find(0)}, find(2) = {uf.find(2)}"
+              f" (same: {uf.find(0) == uf.find(2)})")
+        print(f"find(0) = {uf.find(0)}, find(3) = {uf.find(3)}"
+              f" (same: {uf.find(0) == uf.find(3)})")
+        print()
+
+
 if __name__ == "__main__":
     run_trackers()
     run_lru_cache()
@@ -141,3 +164,4 @@ if __name__ == "__main__":
     run_time_kv_store()
     run_first_duplicate()
     run_prefix_trie()
+    run_union_find()

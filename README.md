@@ -16,7 +16,8 @@ data-structures/
 │       ├── merge_k_sorted.h
 │       ├── time_kv_store.h
 │       ├── first_duplicate.h
-│       └── prefix_trie.h
+│       ├── prefix_trie.h
+│       └── union_find.h
 ├── python/              # uv + src layout
 │   ├── pyproject.toml
 │   ├── main.py
@@ -27,7 +28,8 @@ data-structures/
 │       ├── merge_k_sorted.py
 │       ├── time_kv_store.py
 │       ├── first_duplicate.py
-│       └── prefix_trie.py
+│       ├── prefix_trie.py
+│       └── union_find.py
 ├── scala/               # sbt
 │   ├── build.sbt
 │   └── src/main/scala/
@@ -38,7 +40,8 @@ data-structures/
 │       ├── MergeKSorted.scala
 │       ├── TimeKvStore.scala
 │       ├── FirstDuplicate.scala
-│       └── PrefixTrie.scala
+│       ├── PrefixTrie.scala
+│       └── UnionFind.scala
 └── rust/                # Cargo
     ├── Cargo.toml
     └── src/
@@ -49,7 +52,8 @@ data-structures/
         ├── merge_k_sorted.rs
         ├── time_kv_store.rs
         ├── first_duplicate.rs
-        └── prefix_trie.rs
+        ├── prefix_trie.rs
+        └── union_find.rs
 ```
 
 ## Problems
@@ -131,6 +135,16 @@ Implement insert, search (exact match), and starts-with (prefix matching) on a c
 **B — Fixed-array trie (lowercase ASCII only).** Each node stores children in a fixed array of 26 slots, one per letter a–z. Lookup is a direct index (`c - 'a'`), trading memory (26 slots per node regardless of usage) for speed (no hashing, no collisions). In Rust, the array version uses an index-based node pool (the same pattern as the LRU cache) rather than `Box`, sidestepping ownership constraints entirely.
 
 **Why it's interesting:** Forces you to build a recursive/nested mutable structure from scratch — no language has a standard trie. This is trivial in Python (nested dicts) and Scala (nested mutable maps), straightforward in C++ (`unique_ptr`), and most educational in Rust: the hash map version uses `Box` for exclusive ownership, while the array version uses an index-based node pool. The trie is the clearest example in the repo of how Rust's ownership model shapes data structure design.
+
+### 8. Connected Components (Union-Find / Disjoint Set)
+
+Given n nodes and a list of edges, count the number of connected components. Two implementations per language:
+
+**A — Naive union-find (simple parent tracking).** Each node points to its parent; the root points to itself. `find()` walks up the parent chain. `unite()` links one root to the other with no balancing. Worst case: the tree degenerates into a linked list, making `find()` O(n).
+
+**B — Optimized union-find (path compression + union by rank).** Path compression repoints every node along the `find()` path directly to the root, flattening the tree for future lookups. Union by rank attaches the shorter tree under the taller one, preventing degenerate chains. Together, these give nearly O(1) amortized per operation — formally O(α(n)) where α is the inverse Ackermann function.
+
+**Why it's interesting:** The data structure is just a flat array, so the implementation is nearly identical across all four languages. The value is in seeing how each language handles the mutable array manipulation — especially Rust, where `find()` with path compression requires `&mut self` even though it's logically a query, because it mutates the parent array for performance. This is the clearest example of how Rust makes internal mutation explicit.
 
 ## Initial Setup
 
@@ -218,7 +232,7 @@ Each implementation uses the same imperative, mutable style to keep comparisons 
 - **BTreeMap floor lookups.** `range(..=timestamp).next_back()` returns an iterator over all entries up to and including the key, then grabs the last one. The range syntax `..=` (inclusive) is a Rust-specific feature that makes this very readable.
 - **Insert-returns-boolean.** Both `HashSet::insert` and `BTreeSet::insert` return `true` if the value was new — the same pattern as C++ and Scala, making the first-duplicate code nearly identical across three of the four languages.
 - **Safety and Option types.** The `if let Some(...)` pattern forces the developer to acknowledge that operations like `pop_front()` or `range().next_back()` could return `None`, preventing runtime crashes.
-- **Explicit mutation.** Rust requires `&mut self`, making it crystal clear which methods modify internal state.
+- **Explicit mutation.** Rust requires `&mut self`, making it crystal clear which methods modify internal state. The union-find's `find()` with path compression is the sharpest example: it's logically a query, but because it rewrites parent pointers for performance, Rust requires `&mut self` — the naive version without path compression can use `&self` instead.
 
 ### Cross-Cutting Observations
 
@@ -227,6 +241,7 @@ Each implementation uses the same imperative, mutable style to keep comparisons 
 - **API convergence on sets** (problem 6). C++, Scala, and Rust all offer `insert`-returns-boolean on both hash and sorted sets, making their first-duplicate implementations nearly identical. Python stands apart with its `in` + `add` pattern.
 - **Python's stdlib gaps.** Python is the consistent outlier for sorted containers. Problems 5 and 6 both require workarounds (`bisect` on plain lists) where the other three languages have dedicated sorted map and sorted set types.
 - **Recursive structure ergonomics** (problem 7). The trie is trivially expressed in Python (nested dicts) and Scala (nested mutable maps). C++ uses `unique_ptr` for clean ownership. Rust offers two paths: `Box` for exclusive ownership (hash map trie) and index-based pools for arena-style allocation (array trie). The trie is the clearest example in the repo of how Rust's ownership model shapes data structure design.
+- **Near-identical implementations** (problem 8). Union-find is just index arithmetic on a flat array, so the code looks almost the same in all four languages. The one divergence is Rust's `&mut self` on `find()` with path compression — a query that mutates for performance, which Rust forces you to acknowledge at the type level.
 
 ### Comparison Matrix
 

@@ -275,6 +275,45 @@ object Main extends App {
     println(s"y = [${cscSparseMatvec(ca, x).values.mkString(", ")}]\n")
   }
 
+  /** Print a column-major m x n matrix as a grid. */
+  def printColGrid(colMajor: Array[Double], m: Int, n: Int): Unit = {
+    for (i <- 0 until m) {
+      println((0 until n).map(j => f"${colMajor(j * m + i)}%5.0f").mkString)
+    }
+  }
+
+  def runDenseLuFactor(): Unit = {
+    println("=== Problem 11: Dense LU Factorization ===\n")
+
+    // A 4 x 4 built as the product of integer L and U, so the factor comes
+    // out in exact integers and the pivots are 2, 3, 4, 5:
+    //
+    //    2   4  -2   6
+    //    4  11  -3   9
+    //   -2   5   9 -13
+    //    6   6  -4  31
+    //
+    val n = 4
+    val colMajor = Array(2.0, 4.0, -2.0, 6.0, 4.0, 11.0, 5.0, 6.0,
+                         -2.0, -3.0, 9.0, -4.0, 6.0, 9.0, -13.0, 31.0)
+
+    val a = ColDenseMatrix(n, n, colMajor)
+
+    println(s"A is $n x $n:")
+    printColGrid(a.values, n, n)
+    println(s"val = [${a.values.mkString(", ")}]\n")
+
+    def show(name: String, lu: ColDenseMatrix): Unit = {
+      println(s"--- $name ---")
+      println("LU (U upper, L strict lower, unit diagonal implied):")
+      printColGrid(lu.values, n, n)
+      println(s"val = [${lu.values.mkString(", ")}]\n")
+    }
+
+    show("leftDenseLuFactor (gather)", leftDenseLuFactor(a))
+    show("rightDenseLuFactor (scatter)", rightDenseLuFactor(a))
+  }
+
   runTrackers()
   runLruCache()
   runNextGreater()
@@ -285,4 +324,5 @@ object Main extends App {
   runUnionFind()
   runDenseMatvec()
   runSparseMatvec()
+  runDenseLuFactor()
 }

@@ -19,7 +19,8 @@ data-structures/
 │       ├── prefix_trie.h
 │       ├── union_find.h
 │       ├── dense_matvec.h
-│       └── sparse_matvec.h
+│       ├── sparse_matvec.h
+│       └── dense_lu_factor.h
 ├── python/              # uv + src layout
 │   ├── pyproject.toml
 │   ├── main.py
@@ -33,7 +34,8 @@ data-structures/
 │       ├── prefix_trie.py
 │       ├── union_find.py
 │       ├── dense_matvec.py
-│       └── sparse_matvec.py
+│       ├── sparse_matvec.py
+│       └── dense_lu_factor.py
 ├── scala/               # sbt
 │   ├── build.sbt
 │   └── src/main/scala/
@@ -47,7 +49,8 @@ data-structures/
 │       ├── PrefixTrie.scala
 │       ├── UnionFind.scala
 │       ├── DenseMatvec.scala
-│       └── SparseMatvec.scala
+│       ├── SparseMatvec.scala
+│       └── DenseLuFactor.scala
 └── rust/                # Cargo
     ├── Cargo.toml
     └── src/
@@ -61,7 +64,8 @@ data-structures/
         ├── prefix_trie.rs
         ├── union_find.rs
         ├── dense_matvec.rs
-        └── sparse_matvec.rs
+        ├── sparse_matvec.rs
+        └── dense_lu_factor.rs
 ```
 
 ## Discrete Problems
@@ -185,6 +189,23 @@ The four languages then diverge on what the crossing between the two types costs
 It is also the first problem with a cross-problem dependency: `Vector` is defined in problem 9 and reused here rather than redefined, which each language spells differently — an `#include` in C++, a module import in Python, nothing at all in Scala (same package), and a crate path in Rust.
 
 
+### 11. Dense LU Factorization (Left-Looking / Right-Looking)
+
+Factor a square dense `A` into `A = L U`, with `L` unit lower triangular and `U` upper triangular. No pivoting: the demo matrix is built as the product of integer `L` and `U`, so its pivots are exactly `U`'s diagonal and the whole factorization comes out in exact integers. Column-oriented storage only.
+
+Both implementations write into one buffer. The factor is a copy of `A` overwritten in place, leaving `U` in the upper triangle and `L`'s multipliers in the strict lower triangle; `L`'s unit diagonal is implied and never stored. So the factor's type is just `ColDenseMatrix`, reused from problem 9 — the two triangles need no separate storage, and the return type says nothing a variable name doesn't.
+
+**A — Left-looking (gather).** Column `k` waits until it is reached, then pulls in every earlier column's contribution in one pass, and only then divides its `L` part by the pivot. When the pass begins nothing to the right of column `k` has been touched; when it ends, column `k` is finished.
+
+**B — Right-looking (scatter).** The moment column `k`'s multipliers are known they push a rank-1 update into the entire trailing submatrix. Column `k` finishes early and everything right of it is partially updated. That update is the outer product of column `k`'s multipliers with row `k` of `U`, which is where a real implementation calls a dense GEMM.
+
+**Why it's interesting:** The same gather and scatter pair as the matvec, on an operation where it actually changes the shape of the program. In the matvec, gather and scatter differ only in loop order. Here they differ in *when a value becomes final*: left-looking finishes one column at a time and leaves the rest untouched, right-looking finishes a column immediately and leaves partial results everywhere. Both compute the same `L` and `U`, and on this matrix they agree bitwise because every value is an exactly representable integer; on real input they would differ in the last bits, since the same contributions are summed in different orders.
+
+This is also the scheduling distinction that runs through sparse direct solvers, where left-looking and right-looking factorizations are two of the standard traversals. Meeting it on a dense 4x4 with no pivoting and no symbolic phase is the cheapest place to see it.
+
+The languages barely diverge here, which is itself informative: the kernel is index arithmetic on a flat buffer, so all four read nearly the same. The one visible difference is the copy that preserves `A`. C++ needs no helper at all, since `ColDenseMatrix lu = a;` copies; Python, Scala and Rust each need an explicit one, because assignment binds a reference.
+
+
 ## Initial Setup
 
 See [SETUP.md](SETUP.md) for how the repo was initialized from scratch. This was a one-time step and does not need to be repeated.
@@ -240,6 +261,7 @@ Each implementation uses the same imperative, mutable style to keep comparisons 
 - **Sorted map floor lookups.** `std::map::upper_bound` returns the first element strictly greater than the query; stepping the iterator back one gives the floor entry. This two-step pattern is idiomatic but easy to get wrong at boundaries.
 - **Insert-returns-boolean.** Both `std::unordered_set::insert` and `std::set::insert` return a `pair<iterator, bool>` where `.second` indicates whether the element was new — no separate `find` needed for the first-duplicate problem.
 - **Recursive ownership via `unique_ptr`.** The trie uses `unique_ptr<Node>` for children, giving automatic recursive cleanup when a node is destroyed. This is the most natural C++ approach — straightforward, no manual `delete`, and no shared ownership needed.
+- **Copying is a declaration.** `ColDenseMatrix lu = a;` copies the whole object, buffer included, because the implicitly generated copy constructor does memberwise copy and `std::vector` copies its contents. C++ is the only one of the four where preserving `A` before factoring needs no helper function and no method call.
 - **Subscripting with a stored index needs no cast.** In `x.val[a.colIdx[rp]]` the `colIdx` entry is an `std::int32_t` and `operator[]` wants a `std::size_t`, and the conversion is implicit and silent under `-Wall -Wextra`. This is what makes the index/position split cheap to carry in C++: the types differ where it matters, and the crossing costs nothing to write.
 - **Implicit numeric conversion.** In `a.val[rp + j]` the `std::size_t` and the loop counter mix freely: the usual arithmetic conversions promote silently, so index arithmetic needs no cast even when the two operands have different integer types. This is what makes a signed-index convention cheap in C++ and expensive in Rust.
 - **Toolchain.** Requires the most scaffolding (CMake) but allows for the most aggressive optimizations (`-O3`).
@@ -252,6 +274,7 @@ Each implementation uses the same imperative, mutable style to keep comparisons 
 - **Tuple-based heap ordering.** `heapq` compares tuples lexicographically, so `(value, list_index, element_index)` gives natural min-heap behavior for free — no custom comparator needed.
 - **Set uses `in` before `add`.** Unlike C++, Scala, and Rust where `insert` returns a boolean, Python's `set.add` returns `None`, so the first-duplicate solution checks `val in seen` before adding.
 - **Nested dicts for tries.** The hash map trie is arguably the most Pythonic implementation in the repo — nesting `dict[str, Node]` is natural and concise. No memory management, no pointers, no ownership — just dicts all the way down.
+- **Assignment binds a reference.** `lu = a` would alias, so the LU factorization needs an explicit `list(a.val)` to copy the buffer before overwriting it. Python, Scala and Rust all need this; only C++ copies on assignment.
 - **Unbounded integers.** Python's ints are arbitrary-precision, so neither the index cap nor the position range exists. It is the only one of the four where the sparse formats have no size limit of any kind — the opposite extreme from Scala.
 - **No integer types to distinguish.** The index/position split that C++ and Rust express through `std::int32_t` versus `std::size_t` has nowhere to live in Python, so it survives only as naming: `i` and `j` are indices, `rp` and `cp` are positions. Python is also the only one of the four where `Vector`'s optional buffer is expressible as a default argument (`val: list[float] | None = None`) rather than as a second constructor.
 - **Performance paradox.** `(head + 1) % max_size` is relatively fast in Python because the overhead of the interpreter dwarfs the cost of a single modulo.
@@ -264,6 +287,7 @@ Each implementation uses the same imperative, mutable style to keep comparisons 
 - **Insert-returns-boolean.** Both `mutable.HashSet.add` and `mutable.TreeSet.add` return `true` if the element was new, `false` if it already existed — same pattern as C++ and Rust.
 - **JVM lifecycle.** `sbt` has a long cold-start time, but the JIT compiler optimizes hot paths as the code runs.
 - **No unsigned type, and arrays indexed by `Int`.** Scala has `Byte`, `Short`, `Int`, `Long`, all signed, and `Array` subscripts only with `Int`. So the *index* half of the split is fine (`Int` is exactly a 32-bit signed integer) but the *position* half has nowhere to go, which caps nnz at 2^31 where C++ and Rust reach 2^62. `Array[Long]` would not help, since the JVM caps any array at `Int.MaxValue` elements regardless of element type: the fix is chunked storage, a different layout rather than a different declaration. See `NOTES.md`.
+- **A `while` counter outlives its loop.** `var i = 0` is scoped to the enclosing block, not to the loop, so the right-looking LU has to name its second inner counter `r` where C++, Python and Rust all reuse `i`. Their loop variables are scoped to the loop; Scala's is not, once `while` is chosen over `for`. A small, real cost of the choice below.
 - **`while` in the numerical kernels is deliberate.** General Scala would write `for (rp <- a.rowPtr(i) until a.rowPtr(i + 1))`, and that is idiomatic Scala. Numeric Scala libraries (Breeze, Spire) conventionally use `while` in inner loops, because `for` builds a `Range` and passes the body as a function object, leaving the elimination of both to the JIT at run time rather than to the compiler. The kernels follow the numeric convention; problems 1-8 use `while` for an unrelated reason (Scala 3 deprecates non-local `return` inside a `for`).
 - **`val` is a reserved word.** The value buffer is named `val` in the other three languages; Scala forbids it, so the field is `values` there. The only place in the repo where shared vocabulary bends to a host language. `Vector` also shadows `scala.Vector` within its own file, harmless since the collection is unused there.
 - **Flexibility.** Scala offers the unique ability to switch to immutable collections if data persistence were a requirement.
@@ -297,6 +321,9 @@ Each implementation uses the same imperative, mutable style to keep comparisons 
 - **Where the index/position split has teeth** (problem 10). Dense matvec stores no indices, so all four languages come out identical. Sparse stores them, and the four separate cleanly: C++ and Rust express the split in the type system and pay for the crossing differently (no cast against one `as usize`), Python has unbounded integers so no cap exists at all, and Scala has no unsigned type, capping nnz at 2^31 where the others reach 2^62. This is the widest four-way divergence in the repo, and it is about integer types rather than containers.
 - **Zero-cost abstraction, guaranteed against hoped-for** (problems 9 and 10). Rust, Python and Scala all express an inner loop as iteration over a range object. Rust's is eliminated at compile time by monomorphization, Python's is the fastest construct the interpreter offers, and Scala's depends on the JIT inlining `Range.foreach`, which is why numeric Scala conventionally writes `while` instead. C++ has only the counter loop and the question does not arise.
 - **Cross-problem reuse** (problem 10). `Vector` is defined once in problem 9 and reused, and each language spells the dependency differently: `#include` in C++, a module import in Python, nothing at all in Scala since both files share a package, and a crate path in Rust.
+
+- **Copy semantics, four ways** (problem 11). Preserving `A` before factoring is one line in C++, where assignment copies the object outright. The other three need an explicit copy: `list(a.val)` in Python, `a.values.clone()` in Scala, `a.val.clone()` in Rust. The reason differs — Python and Scala bind references, Rust would move — but the outcome is that C++ is alone in not needing a helper.
+- **Gather and scatter, twice** (problems 9 and 11). In the matvec the two differ only in loop order. In the factorization they differ in when a value becomes final: left-looking finishes a column and touches nothing else, right-looking finishes a column and immediately updates everything after it. The same distinction, once where it is cosmetic and once where it shapes the algorithm.
 
 ### Comparison Matrix
 

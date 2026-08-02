@@ -16,6 +16,9 @@ from datastructures.dense_matvec import (
 from datastructures.sparse_matvec import (
     CsrMatrix, CscMatrix, csr_sparse_matvec, csc_sparse_matvec,
 )
+from datastructures.dense_lu_factor import (
+    left_dense_lu_factor, right_dense_lu_factor,
+)
 
 
 def run_trackers():
@@ -173,8 +176,8 @@ def run_dense_matvec():
     print("=== Problem 9: Dense Matrix-Vector Product ===\n")
 
     m, n = 3, 4
-    row_major = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-    col_major = [1, 5, 9, 2, 6, 10, 3, 7, 11, 4, 8, 12]
+    row_major = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0]
+    col_major = [1.0, 5.0, 9.0, 2.0, 6.0, 10.0, 3.0, 7.0, 11.0, 4.0, 8.0, 12.0]
 
     ra = RowDenseMatrix(m, n, row_major)
     ca = ColDenseMatrix(m, n, col_major)
@@ -198,13 +201,15 @@ def run_sparse_matvec():
 
     m, n = 3, 4
 
-    ra = CsrMatrix(m, n, [0, 2, 3, 6], [0, 2, 1, 0, 2, 3], [1, 2, 3, 4, 5, 6])
-    ca = CscMatrix(m, n, [0, 2, 3, 5, 6], [0, 2, 1, 0, 2, 2], [1, 4, 3, 2, 5, 6])
+    ra = CsrMatrix(m, n, [0, 2, 3, 6], [0, 2, 1, 0, 2, 3],
+                   [1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
+    ca = CscMatrix(m, n, [0, 2, 3, 5, 6], [0, 2, 1, 0, 2, 2],
+                   [1.0, 4.0, 3.0, 2.0, 5.0, 6.0])
 
     x = Vector(n, [1.0, 2.0, 3.0, 4.0])
 
     # The dense picture of the same matrix, for the header only.
-    dense = [1, 0, 2, 0, 0, 3, 0, 0, 4, 0, 5, 6]
+    dense = [1.0, 0.0, 2.0, 0.0, 0.0, 3.0, 0.0, 0.0, 4.0, 0.0, 5.0, 6.0]
 
     print(f"A is {m} x {n} with 6 nonzeros:")
     print_grid(dense, m, n)
@@ -223,6 +228,43 @@ def run_sparse_matvec():
     print(f"y = {csc_sparse_matvec(ca, x).val}\n")
 
 
+def print_col_grid(col_major, m, n):
+    """Print a column-major m x n matrix as a grid."""
+    for i in range(m):
+        print("".join(f"{col_major[j * m + i]:5g}" for j in range(n)))
+
+
+def run_dense_lu_factor():
+    print("=== Problem 11: Dense LU Factorization ===\n")
+
+    # A 4 x 4 built as the product of integer L and U, so the factor comes
+    # out in exact integers and the pivots are 2, 3, 4, 5:
+    #
+    #    2   4  -2   6
+    #    4  11  -3   9
+    #   -2   5   9 -13
+    #    6   6  -4  31
+    #
+    n = 4
+    col_major = [2.0, 4.0, -2.0, 6.0, 4.0, 11.0, 5.0, 6.0,
+                 -2.0, -3.0, 9.0, -4.0, 6.0, 9.0, -13.0, 31.0]
+
+    a = ColDenseMatrix(n, n, col_major)
+
+    print(f"A is {n} x {n}:")
+    print_col_grid(a.val, n, n)
+    print(f"val = {a.val}\n")
+
+    def show(name, lu):
+        print(f"--- {name} ---")
+        print("LU (U upper, L strict lower, unit diagonal implied):")
+        print_col_grid(lu.val, n, n)
+        print(f"val = {lu.val}\n")
+
+    show("left_dense_lu_factor (gather)", left_dense_lu_factor(a))
+    show("right_dense_lu_factor (scatter)", right_dense_lu_factor(a))
+
+
 if __name__ == "__main__":
     run_trackers()
     run_lru_cache()
@@ -234,3 +276,4 @@ if __name__ == "__main__":
     run_union_find()
     run_dense_matvec()
     run_sparse_matvec()
+    run_dense_lu_factor()

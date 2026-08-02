@@ -11,6 +11,7 @@
 #include "union_find.h"
 #include "dense_matvec.h"
 #include "sparse_matvec.h"
+#include "dense_lu_factor.h"
 
 void run_trackers() {
     std::cout << "=== Problem 1: Moving Average Tracker ===\n" << std::endl;
@@ -331,6 +332,49 @@ void run_sparse_matvec() {
     std::cout << std::endl;
 }
 
+// Print a column-major m x n matrix as a grid.
+void print_col_grid(const std::vector<double>& colMajor, std::size_t m, std::size_t n) {
+    for (std::size_t i = 0; i < m; i++) {
+        for (std::size_t j = 0; j < n; j++) {
+            std::cout << std::setw(5) << colMajor[j * m + i];
+        }
+        std::cout << std::endl;
+    }
+}
+
+void run_dense_lu_factor() {
+    std::cout << "=== Problem 11: Dense LU Factorization ===\n" << std::endl;
+
+    // A 4 x 4 built as the product of integer L and U, so the factor comes
+    // out in exact integers and the pivots are 2, 3, 4, 5:
+    //
+    //    2   4  -2   6
+    //    4  11  -3   9
+    //   -2   5   9 -13
+    //    6   6  -4  31
+    //
+    std::size_t n = 4;
+    std::vector<double> colMajor = {2, 4, -2, 6, 4, 11, 5, 6, -2, -3, 9, -4, 6, 9, -13, 31};
+
+    ColDenseMatrix a(n, n, colMajor);
+
+    std::cout << "A is " << n << " x " << n << ":" << std::endl;
+    print_col_grid(a.val, n, n);
+    print_val("val", a.val);
+    std::cout << std::endl;
+
+    auto show = [&](const std::string& name, const ColDenseMatrix& lu) {
+        std::cout << "--- " << name << " ---" << std::endl;
+        std::cout << "LU (U upper, L strict lower, unit diagonal implied):" << std::endl;
+        print_col_grid(lu.val, n, n);
+        print_val("val", lu.val);
+        std::cout << std::endl;
+    };
+
+    show("left_dense_lu_factor (gather)", left_dense_lu_factor(a));
+    show("right_dense_lu_factor (scatter)", right_dense_lu_factor(a));
+}
+
 int main() {
     run_trackers();
     run_lru_cache();
@@ -342,5 +386,6 @@ int main() {
     run_union_find();
     run_dense_matvec();
     run_sparse_matvec();
+    run_dense_lu_factor();
     return 0;
 }

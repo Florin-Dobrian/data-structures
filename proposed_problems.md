@@ -23,6 +23,7 @@ A catalog of candidate problems for the data-structures repo. Each is small enou
 |---|---------|---------------------|
 | 9 | Dense Matrix-Vector Product | flat value buffer, row-major and column-major |
 | 10 | Sparse Matrix-Vector Product | CSR and CSC (pointer, index and value arrays) |
+| 11 | Dense LU Factorization | column-major buffer holding both triangles |
 
 ## Recommendations
 
@@ -40,3 +41,4 @@ The eight discrete problems are implemented, and the numerical kernels have star
 8. Connected Components — union-find, path compression, Rust &mut self on queries
 9. Dense Matrix-Vector Product — gather vs. scatter, row-major vs. column-major, index versus position
 10. Sparse Matrix-Vector Product — CSR vs. CSC, where the index/position typing has consequences
+11. Dense LU Factorization — left-looking vs. right-looking, gather and scatter as schedules

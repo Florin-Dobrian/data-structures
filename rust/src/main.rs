@@ -8,6 +8,7 @@ mod prefix_trie;
 mod union_find;
 mod dense_matvec;
 mod sparse_matvec;
+mod dense_lu_factor;
 
 use avg_tracker::{DequeTracker, CircularBufferTracker};
 use lru_cache::{SimpleVecLRUCache, ManualLRUCache};
@@ -26,6 +27,7 @@ use dense_matvec::{
 use sparse_matvec::{
     CsrMatrix, CscMatrix, csr_sparse_matvec, csc_sparse_matvec,
 };
+use dense_lu_factor::{left_dense_lu_factor, right_dense_lu_factor};
 use union_find::{NaiveUnionFind, RankedUnionFind};
 
 fn run_trackers() {
@@ -327,6 +329,46 @@ fn run_sparse_matvec() {
     println!("y = [{}]\n", fmt_vector(&csc_sparse_matvec(&ca, &x)));
 }
 
+/// Print a column-major m x n matrix as a grid.
+fn print_col_grid(col_major: &[f64], m: usize, n: usize) {
+    for i in 0..m {
+        let row: String = (0..n).map(|j| format!("{:5}", col_major[j * m + i])).collect();
+        println!("{}", row);
+    }
+}
+
+fn run_dense_lu_factor() {
+    println!("=== Problem 11: Dense LU Factorization ===\n");
+
+    // A 4 x 4 built as the product of integer L and U, so the factor comes
+    // out in exact integers and the pivots are 2, 3, 4, 5:
+    //
+    //    2   4  -2   6
+    //    4  11  -3   9
+    //   -2   5   9 -13
+    //    6   6  -4  31
+    //
+    let n = 4;
+    let col_major = vec![2.0, 4.0, -2.0, 6.0, 4.0, 11.0, 5.0, 6.0,
+                         -2.0, -3.0, 9.0, -4.0, 6.0, 9.0, -13.0, 31.0];
+
+    let a = ColDenseMatrix { m_size: n, n_size: n, val: col_major };
+
+    println!("A is {} x {}:", n, n);
+    print_col_grid(&a.val, n, n);
+    println!("val = [{}]\n", fmt_f64(&a.val));
+
+    let show = |name: &str, lu: ColDenseMatrix| {
+        println!("--- {} ---", name);
+        println!("LU (U upper, L strict lower, unit diagonal implied):");
+        print_col_grid(&lu.val, n, n);
+        println!("val = [{}]\n", fmt_f64(&lu.val));
+    };
+
+    show("left_dense_lu_factor (gather)", left_dense_lu_factor(&a));
+    show("right_dense_lu_factor (scatter)", right_dense_lu_factor(&a));
+}
+
 fn main() {
     run_trackers();
     run_lru_cache();
@@ -338,4 +380,5 @@ fn main() {
     run_union_find();
     run_dense_matvec();
     run_sparse_matvec();
+    run_dense_lu_factor();
 }

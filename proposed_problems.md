@@ -1,6 +1,6 @@
 # Proposed Problems
 
-A catalog of candidate problems for the data-structures repo. Each targets a specific container family and is small enough to implement in a single file per language.
+A catalog of candidate problems for the data-structures repo. Each is small enough to implement in a single file per language: the discrete problems target a specific container family, the numerical kernels a specific layout or schedule.
 
 ## Current Problems
 

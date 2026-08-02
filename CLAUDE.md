@@ -11,7 +11,7 @@ See `README.md` for the full problem descriptions and language notes. Don't dupl
 - **Language order is always C++, Python, Scala, Rust.** Everywhere: docs, tables, mains, commit messages, the order you implement in.
 - **Two implementations per problem per language.** Implementation A uses the standard library; Implementation B is the manual/lower-level version. Doc comments open with `Implementation A:` / `Implementation B:` and a one-line summary.
 - **One file per problem per language.** Both implementations live in that single file.
-- **Stdlib only.** No third-party dependencies in any of the four projects, and no test frameworks — `main` is the test harness.
+- **Stdlib only.** No third-party dependencies in any of the four projects. `main` is the test harness; there is no test framework in any of them today.
 - **Same imperative, mutable style across all four languages**, including Scala. Parity matters more than idiom purity here; the point is that the reader can diff the four files.
 
 ## Naming
@@ -43,8 +43,8 @@ Work one problem at a time, and confirm all four languages build and run before 
 
 1. Implement in C++, Python, Scala, Rust — in that order.
 2. Register the demo in each `main` (`run_xxx()` / `runXxx()`), appended in problem order.
-3. Update `README.md`: the repository-layout tree, a new `### N. Problem Name` section with the two implementations and a **Why it's interesting** paragraph, any new bullets under Language Notes / Cross-Cutting Observations, and the comparison matrix if a new row applies.
-4. Update the table and suggested-order list in `proposed_problems.md`.
+3. Update `README.md`: the repository-layout tree, a new `### N. Problem Name` section under the right part (Discrete Problems or Numerical Kernels) with the two implementations and a **Why it's interesting** paragraph, any new bullets under Language Notes / Cross-Cutting Observations, and the comparison matrix if a new row applies.
+4. Update `proposed_problems.md`: the table for that part, and the suggested-order list. Numbering runs straight through both parts.
 5. Run all four and check the output.
 
 **Documentation invariant:** all educational content lives in `README.md`. `proposed_problems.md` is a lightweight tracker only — a table and an ordering, no prose explanations. Blurbs have been lost before by living in the tracker and getting dropped during promotion.

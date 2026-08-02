@@ -17,7 +17,8 @@ data-structures/
 │       ├── time_kv_store.h
 │       ├── first_duplicate.h
 │       ├── prefix_trie.h
-│       └── union_find.h
+│       ├── union_find.h
+│       └── dense_matvec.h
 ├── python/              # uv + src layout
 │   ├── pyproject.toml
 │   ├── main.py
@@ -29,7 +30,8 @@ data-structures/
 │       ├── time_kv_store.py
 │       ├── first_duplicate.py
 │       ├── prefix_trie.py
-│       └── union_find.py
+│       ├── union_find.py
+│       └── dense_matvec.py
 ├── scala/               # sbt
 │   ├── build.sbt
 │   └── src/main/scala/
@@ -41,7 +43,8 @@ data-structures/
 │       ├── TimeKvStore.scala
 │       ├── FirstDuplicate.scala
 │       ├── PrefixTrie.scala
-│       └── UnionFind.scala
+│       ├── UnionFind.scala
+│       └── DenseMatvec.scala
 └── rust/                # Cargo
     ├── Cargo.toml
     └── src/
@@ -53,10 +56,11 @@ data-structures/
         ├── time_kv_store.rs
         ├── first_duplicate.rs
         ├── prefix_trie.rs
-        └── union_find.rs
+        ├── union_find.rs
+        └── dense_matvec.rs
 ```
 
-## Problems
+## Discrete Problems
 
 ### 1. Moving Average Tracker
 
@@ -146,6 +150,20 @@ Given n nodes and a list of edges, count the number of connected components. Two
 
 **Why it's interesting:** The data structure is just a flat array, so the implementation is nearly identical across all four languages. The value is in seeing how each language handles the mutable array manipulation — especially Rust, where `find()` with path compression requires `&mut self` even though it's logically a query, because it mutates the parent array for performance. This is the clearest example of how Rust makes internal mutation explicit.
 
+## Numerical Kernels
+
+### 9. Dense Matrix-Vector Product (Memory Layout)
+
+Compute `y = A x` for a dense m x n matrix. The arithmetic is fixed and trivial; what varies is the order the entries are visited in and the layout they are stored in. Unlike problems 1-8, the two implementations do not share an input: each takes the matrix in the layout its loop order wants, and the check is that both produce the same `y`.
+
+**A — Row-oriented (gather).** `RowDenseMatrix` stores `val` row by row, so row `i` occupies a contiguous run beginning at `rp = i * nSize`. Each `y[i]` is the dot product of row `i` with `x`, accumulated in a local and written exactly once. The inner loop reads all of `x`.
+
+**B — Column-oriented (scatter).** `ColDenseMatrix` stores `val` column by column, so column `j` begins at `cp = j * mSize`. Each column, scaled by `x[j]`, is added into the whole of `y`. `y` starts at zero and accumulates, so no entry is final until the last column is processed. The inner loop reads `x[j]` once and touches all of `y`.
+
+Both walk their storage with stride 1. `rp` and `cp` are named for the arrays they would index into in the sparse version: `rowPtr` and `colPtr`.
+
+**Why it's interesting:** The first problem where the container is a flat buffer and the interesting choice is what the indices *mean* rather than which container to reach for. Two things come out of it. The gather/scatter pair is the same distinction that runs through numerical linear algebra generally, where it appears as left-looking versus right-looking factorization, so meeting it on a two-line kernel is worth doing. And it exposes an integer-type question the earlier problems never raised: an index that gets *stored* wants to be 32-bit, since an index array is large and the cap is acceptable, while a loop counter is ephemeral and should just be whatever the language subscripts with. Dense matvec stores no indices at all, so all four languages come out with no casts anywhere; problem 10 is where the distinction bites. C++ and Rust also diverge on a smaller point: Rust has no implicit numeric conversion, so any convention forcing a non-`usize` counter would cost `for i in 0..n` and turn every loop into a hand-driven `while`, where C++ would pay only one cast in the loop condition.
+
 ## Initial Setup
 
 See [SETUP.md](SETUP.md) for how the repo was initialized from scratch. This was a one-time step and does not need to be repeated.
@@ -201,6 +219,7 @@ Each implementation uses the same imperative, mutable style to keep comparisons 
 - **Sorted map floor lookups.** `std::map::upper_bound` returns the first element strictly greater than the query; stepping the iterator back one gives the floor entry. This two-step pattern is idiomatic but easy to get wrong at boundaries.
 - **Insert-returns-boolean.** Both `std::unordered_set::insert` and `std::set::insert` return a `pair<iterator, bool>` where `.second` indicates whether the element was new — no separate `find` needed for the first-duplicate problem.
 - **Recursive ownership via `unique_ptr`.** The trie uses `unique_ptr<Node>` for children, giving automatic recursive cleanup when a node is destroyed. This is the most natural C++ approach — straightforward, no manual `delete`, and no shared ownership needed.
+- **Implicit numeric conversion.** In `a.val[rp + j]` the `std::size_t` and the loop counter mix freely: the usual arithmetic conversions promote silently, so index arithmetic needs no cast even when the two operands have different integer types. This is what makes a signed-index convention cheap in C++ and expensive in Rust.
 - **Toolchain.** Requires the most scaffolding (CMake) but allows for the most aggressive optimizations (`-O3`).
 
 ### Python (High-Level / Interpreted)
@@ -211,6 +230,7 @@ Each implementation uses the same imperative, mutable style to keep comparisons 
 - **Tuple-based heap ordering.** `heapq` compares tuples lexicographically, so `(value, list_index, element_index)` gives natural min-heap behavior for free — no custom comparator needed.
 - **Set uses `in` before `add`.** Unlike C++, Scala, and Rust where `insert` returns a boolean, Python's `set.add` returns `None`, so the first-duplicate solution checks `val in seen` before adding.
 - **Nested dicts for tries.** The hash map trie is arguably the most Pythonic implementation in the repo — nesting `dict[str, Node]` is natural and concise. No memory management, no pointers, no ownership — just dicts all the way down.
+- **No integer types to distinguish.** The index/position split that C++ and Rust express through `std::int32_t` versus `std::size_t` has nowhere to live in Python, so it survives only as naming: `i` and `j` are indices, `rp` and `cp` are positions. Python is also the only one of the four where `Vector`'s optional buffer is expressible as a default argument (`val: list[float] | None = None`) rather than as a second constructor.
 - **Performance paradox.** `(head + 1) % max_size` is relatively fast in Python because the overhead of the interpreter dwarfs the cost of a single modulo.
 
 ### Scala (JVM / Hybrid)
@@ -220,6 +240,7 @@ Each implementation uses the same imperative, mutable style to keep comparisons 
 - **TreeMap floor lookups.** `tsMap.to(timestamp).lastOption` returns a view of all entries up to and including the key, then grabs the last one. Clean and readable, but creates an intermediate view.
 - **Insert-returns-boolean.** Both `mutable.HashSet.add` and `mutable.TreeSet.add` return `true` if the element was new, `false` if it already existed — same pattern as C++ and Rust.
 - **JVM lifecycle.** `sbt` has a long cold-start time, but the JIT compiler optimizes hot paths as the code runs.
+- **`val` is a reserved word.** The value buffer is named `val` in the other three languages; Scala forbids it, so the field is `values` there. The only place in the repo where shared vocabulary bends to a host language. `Vector` also shadows `scala.Vector` within its own file, harmless since the collection is unused there.
 - **Flexibility.** Scala offers the unique ability to switch to immutable collections if data persistence were a requirement.
 
 ### Rust (Safe / Explicit)
@@ -231,6 +252,7 @@ Each implementation uses the same imperative, mutable style to keep comparisons 
 - **Reverse wrapper for min-heap.** `BinaryHeap` is a max-heap by default. Wrapping entries in `std::cmp::Reverse` is the idiomatic flip — simpler than C++'s template comparator or Scala's reversed `Ordering`.
 - **BTreeMap floor lookups.** `range(..=timestamp).next_back()` returns an iterator over all entries up to and including the key, then grabs the last one. The range syntax `..=` (inclusive) is a Rust-specific feature that makes this very readable.
 - **Insert-returns-boolean.** Both `HashSet::insert` and `BTreeSet::insert` return `true` if the value was new — the same pattern as C++ and Scala, making the first-duplicate code nearly identical across three of the four languages.
+- **No implicit numeric conversion, and `Vec` subscripts only with `usize`.** Every crossing between integer types is written out with `as`. This is why the index-type convention is a statement about *storage* rather than about loop counters: forcing a non-`usize` counter would give up `for i in 0..n` and turn every loop into a hand-driven `while`, where C++ pays only a cast in the condition. Rust also has no constructor overloading or default arguments, so `Vector` needs two named constructors (`new` and `from_val`) where C++ and Scala use two overloads and Python one default.
 - **Safety and Option types.** The `if let Some(...)` pattern forces the developer to acknowledge that operations like `pop_front()` or `range().next_back()` could return `None`, preventing runtime crashes.
 - **Explicit mutation.** Rust requires `&mut self`, making it crystal clear which methods modify internal state. The union-find's `find()` with path compression is the sharpest example: it's logically a query, but because it rewrites parent pointers for performance, Rust requires `&mut self` — the naive version without path compression can use `&self` instead.
 
@@ -243,6 +265,8 @@ Each implementation uses the same imperative, mutable style to keep comparisons 
 - **Recursive structure ergonomics** (problem 7). The trie is trivially expressed in Python (nested dicts) and Scala (nested mutable maps). C++ uses `unique_ptr` for clean ownership. Rust offers two paths: `Box` for exclusive ownership (hash map trie) and index-based pools for arena-style allocation (array trie). The trie is the clearest example in the repo of how Rust's ownership model shapes data structure design.
 - **Near-identical implementations** (problem 8). Union-find is just index arithmetic on a flat array, so the code looks almost the same in all four languages. The one divergence is Rust's `&mut self` on `find()` with path compression — a query that mutates for performance, which Rust forces you to acknowledge at the type level.
 
+- **Layout versus schedule** (problem 9). The first problem where the container is a flat buffer and the design question is what the indices mean. All four implementations are nearly identical, and the divergence is entirely in integer typing: C++ and Rust can express the index/position distinction in the type system, Scala has one `Int` for both, Python has neither. Since dense matvec stores no indices, none of the four needs a cast; problem 10 is where the distinction has consequences.
+
 ### Comparison Matrix
 
 | Feature | C++ | Python | Scala | Rust |
@@ -254,4 +278,5 @@ Each implementation uses the same imperative, mutable style to keep comparisons 
 | **Sorted map** | `std::map` (red-black tree) | None — `bisect` on lists | `mutable.TreeMap` (red-black tree) | `BTreeMap` (B-tree) |
 | **Sorted set** | `std::set` (red-black tree) | None — `bisect` on lists | `mutable.TreeSet` (red-black tree) | `BTreeSet` (B-tree) |
 | **Set insert API** | `pair<iter, bool>` | `None` (`in` + `add`) | `Boolean` | `bool` |
+| **Integer conversion** | Implicit (usual arithmetic conversions) | Untyped | Implicit widening (`Int` to `Long`) | None — every `as` written out |
 | **Style used** | Imperative | Imperative | Mutable (for parity) | Imperative / Safe |

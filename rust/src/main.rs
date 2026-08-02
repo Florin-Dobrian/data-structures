@@ -6,6 +6,7 @@ mod time_kv_store;
 mod first_duplicate;
 mod prefix_trie;
 mod union_find;
+mod dense_matvec;
 
 use avg_tracker::{DequeTracker, CircularBufferTracker};
 use lru_cache::{SimpleVecLRUCache, ManualLRUCache};
@@ -17,6 +18,10 @@ use merge_k_sorted::{merge_k_binary_heap, merge_k_manual_heap};
 use time_kv_store::{BTreeMapTimeKV, ManualBinarySearchTimeKV};
 use first_duplicate::{first_duplicate_hash_set, first_duplicate_sorted_set};
 use prefix_trie::{HashMapTrie, ArrayTrie};
+use dense_matvec::{
+    Vector, RowDenseMatrix, ColDenseMatrix,
+    row_dense_matvec, col_dense_matvec,
+};
 use union_find::{NaiveUnionFind, RankedUnionFind};
 
 fn run_trackers() {
@@ -224,6 +229,36 @@ fn run_union_find() {
     }
 }
 
+fn run_dense_matvec() {
+    println!("=== Problem 9: Dense Matrix-Vector Product ===\n");
+
+    // The same 3 x 4 matrix in both layouts:
+    //
+    //   1  2  3  4
+    //   5  6  7  8
+    //   9 10 11 12
+    //
+    let m = 3;
+    let n = 4;
+    let row_major = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0];
+    let col_major = vec![1.0, 5.0, 9.0, 2.0, 6.0, 10.0, 3.0, 7.0, 11.0, 4.0, 8.0, 12.0];
+
+    let ra = RowDenseMatrix { m_size: m, n_size: n, val: row_major };
+    let ca = ColDenseMatrix { m_size: m, n_size: n, val: col_major };
+    let x = Vector::from_val(n, vec![1.0, 2.0, 3.0, 4.0]);
+
+    println!("A is {} x {}, x = [1, 2, 3, 4]\n", m, n);
+
+    let show = |name: &str, y: Vector| {
+        let entries: Vec<String> = (0..y.size).map(|i| y.val[i].to_string()).collect();
+        println!("--- {} ---", name);
+        println!("y = [{}]\n", entries.join(", "));
+    };
+
+    show("row_dense_matvec (gather)", row_dense_matvec(&ra, &x));
+    show("col_dense_matvec (scatter)", col_dense_matvec(&ca, &x));
+}
+
 fn main() {
     run_trackers();
     run_lru_cache();
@@ -233,4 +268,5 @@ fn main() {
     run_first_duplicate();
     run_prefix_trie();
     run_union_find();
+    run_dense_matvec();
 }

@@ -9,6 +9,10 @@ from datastructures.time_kv_store import BisectTimeKV, ManualBinarySearchTimeKV
 from datastructures.first_duplicate import first_duplicate_hash_set, first_duplicate_sorted_set
 from datastructures.prefix_trie import HashMapTrie, ArrayTrie
 from datastructures.union_find import NaiveUnionFind, RankedUnionFind
+from datastructures.dense_matvec import (
+    Vector, RowDenseMatrix, ColDenseMatrix,
+    row_dense_matvec, col_dense_matvec,
+)
 
 
 def run_trackers():
@@ -156,6 +160,32 @@ def run_union_find():
         print()
 
 
+def run_dense_matvec():
+    print("=== Problem 9: Dense Matrix-Vector Product ===\n")
+
+    # The same 3 x 4 matrix in both layouts:
+    #
+    #   1  2  3  4
+    #   5  6  7  8
+    #   9 10 11 12
+    #
+    m, n = 3, 4
+    row_major = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    col_major = [1, 5, 9, 2, 6, 10, 3, 7, 11, 4, 8, 12]
+
+    ra = RowDenseMatrix(m, n, row_major)
+    ca = ColDenseMatrix(m, n, col_major)
+    x = Vector(n, [1.0, 2.0, 3.0, 4.0])
+
+    print(f"A is {m} x {n}, x = [1, 2, 3, 4]\n")
+
+    print("--- row_dense_matvec (gather) ---")
+    print(f"y = {row_dense_matvec(ra, x).val}\n")
+
+    print("--- col_dense_matvec (scatter) ---")
+    print(f"y = {col_dense_matvec(ca, x).val}\n")
+
+
 if __name__ == "__main__":
     run_trackers()
     run_lru_cache()
@@ -165,3 +195,4 @@ if __name__ == "__main__":
     run_first_duplicate()
     run_prefix_trie()
     run_union_find()
+    run_dense_matvec()

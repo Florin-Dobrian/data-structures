@@ -47,7 +47,7 @@ private:
     double current_sum = 0.0;
 
 public:
-    CircularBufferTracker(size_t size) : max_size(size), buffer(size, 0.0) {
+    CircularBufferTracker(size_t size) : buffer(size, 0.0), max_size(size) {
         if (size < 1) throw std::invalid_argument("size must be at least 1");
     }
 

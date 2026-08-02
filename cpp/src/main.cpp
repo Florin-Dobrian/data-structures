@@ -8,6 +8,7 @@
 #include "first_duplicate.h"
 #include "prefix_trie.h"
 #include "union_find.h"
+#include "dense_matvec.h"
 
 void run_trackers() {
     std::cout << "=== Problem 1: Moving Average Tracker ===\n" << std::endl;
@@ -239,6 +240,40 @@ void run_union_find() {
     test(ruf, "RankedUnionFind");
 }
 
+void run_dense_matvec() {
+    std::cout << "=== Problem 9: Dense Matrix-Vector Product ===\n" << std::endl;
+
+    // The same 3 x 4 matrix in both layouts:
+    //
+    //   1  2  3  4
+    //   5  6  7  8
+    //   9 10 11 12
+    //
+    std::size_t m = 3, n = 4;
+    std::vector<double> rowMajor = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+    std::vector<double> colMajor = {1, 5, 9, 2, 6, 10, 3, 7, 11, 4, 8, 12};
+
+    RowDenseMatrix ra(m, n, rowMajor);
+    ColDenseMatrix ca(m, n, colMajor);
+    Vector x(n, {1.0, 2.0, 3.0, 4.0});
+
+    std::cout << "A is " << m << " x " << n << ", x = [1, 2, 3, 4]" << std::endl;
+    std::cout << std::endl;
+
+    auto show = [](const std::string& name, const Vector& y) {
+        std::cout << "--- " << name << " ---" << std::endl;
+        std::cout << "y = [";
+        for (std::size_t i = 0; i < y.size; i++) {
+            if (i > 0) std::cout << ", ";
+            std::cout << y.val[i];
+        }
+        std::cout << "]" << std::endl << std::endl;
+    };
+
+    show("row_dense_matvec (gather)", row_dense_matvec(ra, x));
+    show("col_dense_matvec (scatter)", col_dense_matvec(ca, x));
+}
+
 int main() {
     run_trackers();
     run_lru_cache();
@@ -248,5 +283,6 @@ int main() {
     run_first_duplicate();
     run_prefix_trie();
     run_union_find();
+    run_dense_matvec();
     return 0;
 }

@@ -205,6 +205,33 @@ object Main extends App {
     }
   }
 
+  def runDenseMatvec(): Unit = {
+    println("=== Problem 9: Dense Matrix-Vector Product ===\n")
+
+    // The same 3 x 4 matrix in both layouts:
+    //
+    //   1  2  3  4
+    //   5  6  7  8
+    //   9 10 11 12
+    //
+    val m = 3
+    val n = 4
+    val rowMajor = Array(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0)
+    val colMajor = Array(1.0, 5.0, 9.0, 2.0, 6.0, 10.0, 3.0, 7.0, 11.0, 4.0, 8.0, 12.0)
+
+    val ra = RowDenseMatrix(m, n, rowMajor)
+    val ca = ColDenseMatrix(m, n, colMajor)
+    val x = Vector(n, Array(1.0, 2.0, 3.0, 4.0))
+
+    println(s"A is $m x $n, x = [1, 2, 3, 4]\n")
+
+    println("--- rowDenseMatvec (gather) ---")
+    println(s"y = [${rowDenseMatvec(ra, x).values.mkString(", ")}]\n")
+
+    println("--- colDenseMatvec (scatter) ---")
+    println(s"y = [${colDenseMatvec(ca, x).values.mkString(", ")}]\n")
+  }
+
   runTrackers()
   runLruCache()
   runNextGreater()
@@ -213,4 +240,5 @@ object Main extends App {
   runFirstDuplicate()
   runPrefixTrie()
   runUnionFind()
+  runDenseMatvec()
 }

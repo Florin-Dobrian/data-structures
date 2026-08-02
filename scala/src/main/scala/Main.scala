@@ -205,15 +205,16 @@ object Main extends App {
     }
   }
 
+  /** Print an m x n matrix as a grid, given its entries in row-major order. */
+  def printGrid(rowMajor: Array[Double], m: Int, n: Int): Unit = {
+    for (i <- 0 until m) {
+      println((0 until n).map(j => f"${rowMajor(i * n + j)}%5.0f").mkString)
+    }
+  }
+
   def runDenseMatvec(): Unit = {
     println("=== Problem 9: Dense Matrix-Vector Product ===\n")
 
-    // The same 3 x 4 matrix in both layouts:
-    //
-    //   1  2  3  4
-    //   5  6  7  8
-    //   9 10 11 12
-    //
     val m = 3
     val n = 4
     val rowMajor = Array(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0)
@@ -223,47 +224,54 @@ object Main extends App {
     val ca = ColDenseMatrix(m, n, colMajor)
     val x = Vector(n, Array(1.0, 2.0, 3.0, 4.0))
 
-    println(s"A is $m x $n, x = [1, 2, 3, 4]\n")
+    println(s"A is $m x $n:")
+    printGrid(rowMajor, m, n)
+    println(s"x = [${x.values.mkString(", ")}]\n")
 
     println("--- rowDenseMatvec (gather) ---")
+    println(s"val = [${ra.values.mkString(", ")}]")
     println(s"y = [${rowDenseMatvec(ra, x).values.mkString(", ")}]\n")
 
     println("--- colDenseMatvec (scatter) ---")
+    println(s"val = [${ca.values.mkString(", ")}]")
     println(s"y = [${colDenseMatvec(ca, x).values.mkString(", ")}]\n")
   }
 
   def runSparseMatvec(): Unit = {
     println("=== Problem 10: Sparse Matrix-Vector Product ===\n")
 
-    // The same 3 x 4 matrix in both formats, 6 nonzeros:
-    //
-    //   1  0  2  0
-    //   0  3  0  0
-    //   4  0  5  6
-    //
     val m = 3
     val n = 4
 
-    // CSR: row by row.
     val ra = CsrMatrix(m, n,
-      Array(0, 2, 3, 6),                                  // rowPtr
-      Array(0, 2, 1, 0, 2, 3),                            // colIdx
-      Array(1.0, 2.0, 3.0, 4.0, 5.0, 6.0))                // values
+      Array(0, 2, 3, 6),
+      Array(0, 2, 1, 0, 2, 3),
+      Array(1.0, 2.0, 3.0, 4.0, 5.0, 6.0))
 
-    // CSC: column by column, so the same nonzeros in a different order.
     val ca = CscMatrix(m, n,
-      Array(0, 2, 3, 5, 6),                               // colPtr
-      Array(0, 2, 1, 0, 2, 2),                            // rowIdx
-      Array(1.0, 4.0, 3.0, 2.0, 5.0, 6.0))                // values
+      Array(0, 2, 3, 5, 6),
+      Array(0, 2, 1, 0, 2, 2),
+      Array(1.0, 4.0, 3.0, 2.0, 5.0, 6.0))
 
     val x = Vector(n, Array(1.0, 2.0, 3.0, 4.0))
 
-    println(s"A is $m x $n with 6 nonzeros, x = [1, 2, 3, 4]\n")
+    // The dense picture of the same matrix, for the header only.
+    val dense = Array(1.0, 0.0, 2.0, 0.0, 0.0, 3.0, 0.0, 0.0, 4.0, 0.0, 5.0, 6.0)
+
+    println(s"A is $m x $n with 6 nonzeros:")
+    printGrid(dense, m, n)
+    println(s"x = [${x.values.mkString(", ")}]\n")
 
     println("--- csrSparseMatvec (gather) ---")
+    println(s"rowPtr = [${ra.rowPtr.mkString(", ")}]")
+    println(s"colIdx = [${ra.colIdx.mkString(", ")}]")
+    println(s"val = [${ra.values.mkString(", ")}]")
     println(s"y = [${csrSparseMatvec(ra, x).values.mkString(", ")}]\n")
 
     println("--- cscSparseMatvec (scatter) ---")
+    println(s"colPtr = [${ca.colPtr.mkString(", ")}]")
+    println(s"rowIdx = [${ca.rowIdx.mkString(", ")}]")
+    println(s"val = [${ca.values.mkString(", ")}]")
     println(s"y = [${cscSparseMatvec(ca, x).values.mkString(", ")}]\n")
   }
 

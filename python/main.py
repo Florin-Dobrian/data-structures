@@ -163,15 +163,15 @@ def run_union_find():
         print()
 
 
+def print_grid(row_major, m, n):
+    """Print an m x n matrix as a grid, given its entries in row-major order."""
+    for i in range(m):
+        print("".join(f"{row_major[i * n + j]:5g}" for j in range(n)))
+
+
 def run_dense_matvec():
     print("=== Problem 9: Dense Matrix-Vector Product ===\n")
 
-    # The same 3 x 4 matrix in both layouts:
-    #
-    #   1  2  3  4
-    #   5  6  7  8
-    #   9 10 11 12
-    #
     m, n = 3, 4
     row_major = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     col_major = [1, 5, 9, 2, 6, 10, 3, 7, 11, 4, 8, 12]
@@ -180,46 +180,46 @@ def run_dense_matvec():
     ca = ColDenseMatrix(m, n, col_major)
     x = Vector(n, [1.0, 2.0, 3.0, 4.0])
 
-    print(f"A is {m} x {n}, x = [1, 2, 3, 4]\n")
+    print(f"A is {m} x {n}:")
+    print_grid(row_major, m, n)
+    print(f"x = {x.val}\n")
 
     print("--- row_dense_matvec (gather) ---")
+    print(f"val = {ra.val}")
     print(f"y = {row_dense_matvec(ra, x).val}\n")
 
     print("--- col_dense_matvec (scatter) ---")
+    print(f"val = {ca.val}")
     print(f"y = {col_dense_matvec(ca, x).val}\n")
 
 
 def run_sparse_matvec():
     print("=== Problem 10: Sparse Matrix-Vector Product ===\n")
 
-    # The same 3 x 4 matrix in both formats, 6 nonzeros:
-    #
-    #   1  0  2  0
-    #   0  3  0  0
-    #   4  0  5  6
-    #
     m, n = 3, 4
 
-    # CSR: row by row.
-    ra = CsrMatrix(m, n,
-                   [0, 2, 3, 6],            # row_ptr
-                   [0, 2, 1, 0, 2, 3],      # col_idx
-                   [1, 2, 3, 4, 5, 6])      # val
-
-    # CSC: column by column, so the same nonzeros in a different order.
-    ca = CscMatrix(m, n,
-                   [0, 2, 3, 5, 6],         # col_ptr
-                   [0, 2, 1, 0, 2, 2],      # row_idx
-                   [1, 4, 3, 2, 5, 6])      # val
+    ra = CsrMatrix(m, n, [0, 2, 3, 6], [0, 2, 1, 0, 2, 3], [1, 2, 3, 4, 5, 6])
+    ca = CscMatrix(m, n, [0, 2, 3, 5, 6], [0, 2, 1, 0, 2, 2], [1, 4, 3, 2, 5, 6])
 
     x = Vector(n, [1.0, 2.0, 3.0, 4.0])
 
-    print(f"A is {m} x {n} with 6 nonzeros, x = [1, 2, 3, 4]\n")
+    # The dense picture of the same matrix, for the header only.
+    dense = [1, 0, 2, 0, 0, 3, 0, 0, 4, 0, 5, 6]
+
+    print(f"A is {m} x {n} with 6 nonzeros:")
+    print_grid(dense, m, n)
+    print(f"x = {x.val}\n")
 
     print("--- csr_sparse_matvec (gather) ---")
+    print(f"row_ptr = {ra.row_ptr}")
+    print(f"col_idx = {ra.col_idx}")
+    print(f"val = {ra.val}")
     print(f"y = {csr_sparse_matvec(ra, x).val}\n")
 
     print("--- csc_sparse_matvec (scatter) ---")
+    print(f"col_ptr = {ca.col_ptr}")
+    print(f"row_idx = {ca.row_idx}")
+    print(f"val = {ca.val}")
     print(f"y = {csc_sparse_matvec(ca, x).val}\n")
 
 

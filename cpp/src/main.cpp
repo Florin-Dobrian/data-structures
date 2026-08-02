@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <vector>
 #include "avg_tracker.h"
 #include "lru_cache.h"
@@ -241,15 +242,29 @@ void run_union_find() {
     test(ruf, "RankedUnionFind");
 }
 
+// Print a flat buffer as a bracketed list.
+void print_val(const std::string& name, const std::vector<double>& val) {
+    std::cout << name << " = [";
+    for (std::size_t p = 0; p < val.size(); p++) {
+        if (p > 0) std::cout << ", ";
+        std::cout << val[p];
+    }
+    std::cout << "]" << std::endl;
+}
+
+// Print an m x n matrix as a grid, given its entries in row-major order.
+void print_grid(const std::vector<double>& rowMajor, std::size_t m, std::size_t n) {
+    for (std::size_t i = 0; i < m; i++) {
+        for (std::size_t j = 0; j < n; j++) {
+            std::cout << std::setw(5) << rowMajor[i * n + j];
+        }
+        std::cout << std::endl;
+    }
+}
+
 void run_dense_matvec() {
     std::cout << "=== Problem 9: Dense Matrix-Vector Product ===\n" << std::endl;
 
-    // The same 3 x 4 matrix in both layouts:
-    //
-    //   1  2  3  4
-    //   5  6  7  8
-    //   9 10 11 12
-    //
     std::size_t m = 3, n = 4;
     std::vector<double> rowMajor = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
     std::vector<double> colMajor = {1, 5, 9, 2, 6, 10, 3, 7, 11, 4, 8, 12};
@@ -258,63 +273,62 @@ void run_dense_matvec() {
     ColDenseMatrix ca(m, n, colMajor);
     Vector x(n, {1.0, 2.0, 3.0, 4.0});
 
-    std::cout << "A is " << m << " x " << n << ", x = [1, 2, 3, 4]" << std::endl;
+    std::cout << "A is " << m << " x " << n << ":" << std::endl;
+    print_grid(rowMajor, m, n);
+    print_val("x", x.val);
     std::cout << std::endl;
 
-    auto show = [](const std::string& name, const Vector& y) {
-        std::cout << "--- " << name << " ---" << std::endl;
-        std::cout << "y = [";
-        for (std::size_t i = 0; i < y.size; i++) {
-            if (i > 0) std::cout << ", ";
-            std::cout << y.val[i];
-        }
-        std::cout << "]" << std::endl << std::endl;
-    };
+    std::cout << "--- row_dense_matvec (gather) ---" << std::endl;
+    print_val("val", ra.val);
+    print_val("y", row_dense_matvec(ra, x).val);
+    std::cout << std::endl;
 
-    show("row_dense_matvec (gather)", row_dense_matvec(ra, x));
-    show("col_dense_matvec (scatter)", col_dense_matvec(ca, x));
+    std::cout << "--- col_dense_matvec (scatter) ---" << std::endl;
+    print_val("val", ca.val);
+    print_val("y", col_dense_matvec(ca, x).val);
+    std::cout << std::endl;
 }
 
 void run_sparse_matvec() {
     std::cout << "=== Problem 10: Sparse Matrix-Vector Product ===\n" << std::endl;
 
-    // The same 3 x 4 matrix in both formats, 6 nonzeros:
-    //
-    //   1  0  2  0
-    //   0  3  0  0
-    //   4  0  5  6
-    //
     std::size_t m = 3, n = 4;
 
-    // CSR: row by row.
-    CsrMatrix ra(m, n,
-                 {0, 2, 3, 6},              // rowPtr
-                 {0, 2, 1, 0, 2, 3},        // colIdx
-                 {1, 2, 3, 4, 5, 6});       // val
-
-    // CSC: column by column, so the same nonzeros in a different order.
-    CscMatrix ca(m, n,
-                 {0, 2, 3, 5, 6},           // colPtr
-                 {0, 2, 1, 0, 2, 2},        // rowIdx
-                 {1, 4, 3, 2, 5, 6});       // val
+    CsrMatrix ra(m, n, {0, 2, 3, 6}, {0, 2, 1, 0, 2, 3}, {1, 2, 3, 4, 5, 6});
+    CscMatrix ca(m, n, {0, 2, 3, 5, 6}, {0, 2, 1, 0, 2, 2}, {1, 4, 3, 2, 5, 6});
 
     Vector x(n, {1.0, 2.0, 3.0, 4.0});
 
-    std::cout << "A is " << m << " x " << n << " with 6 nonzeros, x = [1, 2, 3, 4]" << std::endl;
-    std::cout << std::endl;
+    // The dense picture of the same matrix, for the header only.
+    std::vector<double> dense = {1, 0, 2, 0, 0, 3, 0, 0, 4, 0, 5, 6};
 
-    auto show = [](const std::string& name, const Vector& y) {
-        std::cout << "--- " << name << " ---" << std::endl;
-        std::cout << "y = [";
-        for (std::size_t i = 0; i < y.size; i++) {
-            if (i > 0) std::cout << ", ";
-            std::cout << y.val[i];
+    auto print_idx = [](const std::string& name, const auto& idx) {
+        std::cout << name << " = [";
+        for (std::size_t p = 0; p < idx.size(); p++) {
+            if (p > 0) std::cout << ", ";
+            std::cout << idx[p];
         }
-        std::cout << "]" << std::endl << std::endl;
+        std::cout << "]" << std::endl;
     };
 
-    show("csr_sparse_matvec (gather)", csr_sparse_matvec(ra, x));
-    show("csc_sparse_matvec (scatter)", csc_sparse_matvec(ca, x));
+    std::cout << "A is " << m << " x " << n << " with 6 nonzeros:" << std::endl;
+    print_grid(dense, m, n);
+    print_val("x", x.val);
+    std::cout << std::endl;
+
+    std::cout << "--- csr_sparse_matvec (gather) ---" << std::endl;
+    print_idx("rowPtr", ra.rowPtr);
+    print_idx("colIdx", ra.colIdx);
+    print_val("val", ra.val);
+    print_val("y", csr_sparse_matvec(ra, x).val);
+    std::cout << std::endl;
+
+    std::cout << "--- csc_sparse_matvec (scatter) ---" << std::endl;
+    print_idx("colPtr", ca.colPtr);
+    print_idx("rowIdx", ca.rowIdx);
+    print_val("val", ca.val);
+    print_val("y", csc_sparse_matvec(ca, x).val);
+    std::cout << std::endl;
 }
 
 int main() {

@@ -233,49 +233,62 @@ fn run_union_find() {
     }
 }
 
+fn fmt_f64(v: &[f64]) -> String {
+    v.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", ")
+}
+
+/// A Vector prints itself over its own size rather than its buffer length.
+fn fmt_vector(v: &Vector) -> String {
+    (0..v.size).map(|i| v.val[i].to_string()).collect::<Vec<_>>().join(", ")
+}
+
+fn fmt_usize(v: &[usize]) -> String {
+    v.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", ")
+}
+
+fn fmt_i32(v: &[i32]) -> String {
+    v.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", ")
+}
+
+/// Print an m x n matrix as a grid, given its entries in row-major order.
+fn print_grid(row_major: &[f64], m: usize, n: usize) {
+    for i in 0..m {
+        let row: String = (0..n).map(|j| format!("{:5}", row_major[i * n + j])).collect();
+        println!("{}", row);
+    }
+}
+
 fn run_dense_matvec() {
     println!("=== Problem 9: Dense Matrix-Vector Product ===\n");
 
-    // The same 3 x 4 matrix in both layouts:
-    //
-    //   1  2  3  4
-    //   5  6  7  8
-    //   9 10 11 12
-    //
     let m = 3;
     let n = 4;
     let row_major = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0];
     let col_major = vec![1.0, 5.0, 9.0, 2.0, 6.0, 10.0, 3.0, 7.0, 11.0, 4.0, 8.0, 12.0];
 
-    let ra = RowDenseMatrix { m_size: m, n_size: n, val: row_major };
+    let ra = RowDenseMatrix { m_size: m, n_size: n, val: row_major.clone() };
     let ca = ColDenseMatrix { m_size: m, n_size: n, val: col_major };
     let x = Vector::from_val(n, vec![1.0, 2.0, 3.0, 4.0]);
 
-    println!("A is {} x {}, x = [1, 2, 3, 4]\n", m, n);
+    println!("A is {} x {}:", m, n);
+    print_grid(&row_major, m, n);
+    println!("x = [{}]\n", fmt_vector(&x));
 
-    let show = |name: &str, y: Vector| {
-        let entries: Vec<String> = (0..y.size).map(|i| y.val[i].to_string()).collect();
-        println!("--- {} ---", name);
-        println!("y = [{}]\n", entries.join(", "));
-    };
+    println!("--- row_dense_matvec (gather) ---");
+    println!("val = [{}]", fmt_f64(&ra.val));
+    println!("y = [{}]\n", fmt_vector(&row_dense_matvec(&ra, &x)));
 
-    show("row_dense_matvec (gather)", row_dense_matvec(&ra, &x));
-    show("col_dense_matvec (scatter)", col_dense_matvec(&ca, &x));
+    println!("--- col_dense_matvec (scatter) ---");
+    println!("val = [{}]", fmt_f64(&ca.val));
+    println!("y = [{}]\n", fmt_vector(&col_dense_matvec(&ca, &x)));
 }
 
 fn run_sparse_matvec() {
     println!("=== Problem 10: Sparse Matrix-Vector Product ===\n");
 
-    // The same 3 x 4 matrix in both formats, 6 nonzeros:
-    //
-    //   1  0  2  0
-    //   0  3  0  0
-    //   4  0  5  6
-    //
     let m = 3;
     let n = 4;
 
-    // CSR: row by row.
     let ra = CsrMatrix {
         m_size: m,
         n_size: n,
@@ -284,7 +297,6 @@ fn run_sparse_matvec() {
         val: vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
     };
 
-    // CSC: column by column, so the same nonzeros in a different order.
     let ca = CscMatrix {
         m_size: m,
         n_size: n,
@@ -295,16 +307,24 @@ fn run_sparse_matvec() {
 
     let x = Vector::from_val(n, vec![1.0, 2.0, 3.0, 4.0]);
 
-    println!("A is {} x {} with 6 nonzeros, x = [1, 2, 3, 4]\n", ra.m_size, ra.n_size);
+    // The dense picture of the same matrix, for the header only.
+    let dense = vec![1.0, 0.0, 2.0, 0.0, 0.0, 3.0, 0.0, 0.0, 4.0, 0.0, 5.0, 6.0];
 
-    let show = |name: &str, y: Vector| {
-        let entries: Vec<String> = (0..y.size).map(|i| y.val[i].to_string()).collect();
-        println!("--- {} ---", name);
-        println!("y = [{}]\n", entries.join(", "));
-    };
+    println!("A is {} x {} with 6 nonzeros:", ra.m_size, ra.n_size);
+    print_grid(&dense, m, n);
+    println!("x = [{}]\n", fmt_vector(&x));
 
-    show("csr_sparse_matvec (gather)", csr_sparse_matvec(&ra, &x));
-    show("csc_sparse_matvec (scatter)", csc_sparse_matvec(&ca, &x));
+    println!("--- csr_sparse_matvec (gather) ---");
+    println!("rowPtr = [{}]", fmt_usize(&ra.row_ptr));
+    println!("colIdx = [{}]", fmt_i32(&ra.col_idx));
+    println!("val = [{}]", fmt_f64(&ra.val));
+    println!("y = [{}]\n", fmt_vector(&csr_sparse_matvec(&ra, &x)));
+
+    println!("--- csc_sparse_matvec (scatter) ---");
+    println!("colPtr = [{}]", fmt_usize(&ca.col_ptr));
+    println!("rowIdx = [{}]", fmt_i32(&ca.row_idx));
+    println!("val = [{}]", fmt_f64(&ca.val));
+    println!("y = [{}]\n", fmt_vector(&csc_sparse_matvec(&ca, &x)));
 }
 
 fn main() {

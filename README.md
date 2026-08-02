@@ -18,7 +18,8 @@ data-structures/
 │       ├── first_duplicate.h
 │       ├── prefix_trie.h
 │       ├── union_find.h
-│       └── dense_matvec.h
+│       ├── dense_matvec.h
+│       └── sparse_matvec.h
 ├── python/              # uv + src layout
 │   ├── pyproject.toml
 │   ├── main.py
@@ -31,7 +32,8 @@ data-structures/
 │       ├── first_duplicate.py
 │       ├── prefix_trie.py
 │       ├── union_find.py
-│       └── dense_matvec.py
+│       ├── dense_matvec.py
+│       └── sparse_matvec.py
 ├── scala/               # sbt
 │   ├── build.sbt
 │   └── src/main/scala/
@@ -44,7 +46,8 @@ data-structures/
 │       ├── FirstDuplicate.scala
 │       ├── PrefixTrie.scala
 │       ├── UnionFind.scala
-│       └── DenseMatvec.scala
+│       ├── DenseMatvec.scala
+│       └── SparseMatvec.scala
 └── rust/                # Cargo
     ├── Cargo.toml
     └── src/
@@ -57,7 +60,8 @@ data-structures/
         ├── first_duplicate.rs
         ├── prefix_trie.rs
         ├── union_find.rs
-        └── dense_matvec.rs
+        ├── dense_matvec.rs
+        └── sparse_matvec.rs
 ```
 
 ## Discrete Problems
@@ -164,6 +168,23 @@ Both walk their storage with stride 1. `rp` and `cp` are named for the arrays th
 
 **Why it's interesting:** The first problem where the container is a flat buffer and the interesting choice is what the indices *mean* rather than which container to reach for. Two things come out of it. The gather/scatter pair is the same distinction that runs through numerical linear algebra generally, where it appears as left-looking versus right-looking factorization, so meeting it on a two-line kernel is worth doing. And it exposes an integer-type question the earlier problems never raised: an index that gets *stored* wants to be 32-bit, since an index array is large and the cap is acceptable, while a loop counter is ephemeral and should just be whatever the language subscripts with. Dense matvec stores no indices at all, so all four languages come out with no casts anywhere; problem 10 is where the distinction bites. C++ and Rust also diverge on a smaller point: Rust has no implicit numeric conversion, so any convention forcing a non-`usize` counter would cost `for i in 0..n` and turn every loop into a hand-driven `while`, where C++ would pay only one cast in the loop condition.
 
+### 10. Sparse Matrix-Vector Product (CSR / CSC)
+
+The same `y = A x`, with the zeros no longer stored. Only the nonzeros are held, in three flat arrays: a pointer array marking where each row or column begins, an index array giving the row or column of each stored entry, and the values. As in problem 9, the two implementations take different inputs and agreeing on `y` is the check.
+
+**A — CSR, Compressed Sparse Row (gather).** `rowPtr` has `mSize + 1` entries and row `i` occupies positions `rowPtr[i]` up to `rowPtr[i + 1]`; `colIdx` gives each entry's column. Same shape as the dense gather, with one change: the row begins at `rowPtr[i]` rather than `i * nSize`, and its entries are scattered across `x`, so each column has to be read from `colIdx`. That indirection, `x.val[colIdx[rp]]`, is the whole difference between a dense and a sparse kernel.
+
+**B — CSC, Compressed Sparse Column (scatter).** The mirror. `colPtr` bounds each column, `rowIdx` gives each entry's row, and the indirection moves from the read to the write: `y.val[rowIdx[cp]] += ...` jumps, while `x[j]` is read once per column. This is why a scatter is the harder one to parallelize — two columns can write the same entry of `y`.
+
+The same matrix in the two formats holds the same nonzeros in a different order, so `val` differs between them.
+
+**Why it's interesting:** This is where the index/position distinction stops being vocabulary and starts costing something. `rowPtr` and `colPtr` hold positions and are `std::size_t` / `usize`; `colIdx` and `rowIdx` hold indices and are `std::int32_t` / `i32`, because an index array is as long as the matrix has nonzeros and its width is a first-order memory cost. Decoupling the two also buys range: 32-bit indices cap the dimension at 2^31, but nnz is bounded by n², so positions need roughly 2^62 to cover what those indices can address. See `NOTES.md` for the full argument, including why Scala cannot express this at all and what that costs.
+
+The four languages then diverge on what the crossing between the two types costs. C++ subscripts with an `int32_t` silently, so the line carries no cast. Rust has no implicit numeric conversion, so it reads `x.val[a.col_idx[rp] as usize]` — one cast, in exactly the place where the distinction is real. Scala and Python have one integer type each doing both jobs, so the split survives only in the naming.
+
+It is also the first problem with a cross-problem dependency: `Vector` is defined in problem 9 and reused here rather than redefined, which each language spells differently — an `#include` in C++, a module import in Python, nothing at all in Scala (same package), and a crate path in Rust.
+
+
 ## Initial Setup
 
 See [SETUP.md](SETUP.md) for how the repo was initialized from scratch. This was a one-time step and does not need to be repeated.
@@ -219,6 +240,7 @@ Each implementation uses the same imperative, mutable style to keep comparisons 
 - **Sorted map floor lookups.** `std::map::upper_bound` returns the first element strictly greater than the query; stepping the iterator back one gives the floor entry. This two-step pattern is idiomatic but easy to get wrong at boundaries.
 - **Insert-returns-boolean.** Both `std::unordered_set::insert` and `std::set::insert` return a `pair<iterator, bool>` where `.second` indicates whether the element was new — no separate `find` needed for the first-duplicate problem.
 - **Recursive ownership via `unique_ptr`.** The trie uses `unique_ptr<Node>` for children, giving automatic recursive cleanup when a node is destroyed. This is the most natural C++ approach — straightforward, no manual `delete`, and no shared ownership needed.
+- **Subscripting with a stored index needs no cast.** In `x.val[a.colIdx[rp]]` the `colIdx` entry is an `std::int32_t` and `operator[]` wants a `std::size_t`, and the conversion is implicit and silent under `-Wall -Wextra`. This is what makes the index/position split cheap to carry in C++: the types differ where it matters, and the crossing costs nothing to write.
 - **Implicit numeric conversion.** In `a.val[rp + j]` the `std::size_t` and the loop counter mix freely: the usual arithmetic conversions promote silently, so index arithmetic needs no cast even when the two operands have different integer types. This is what makes a signed-index convention cheap in C++ and expensive in Rust.
 - **Toolchain.** Requires the most scaffolding (CMake) but allows for the most aggressive optimizations (`-O3`).
 
@@ -230,6 +252,7 @@ Each implementation uses the same imperative, mutable style to keep comparisons 
 - **Tuple-based heap ordering.** `heapq` compares tuples lexicographically, so `(value, list_index, element_index)` gives natural min-heap behavior for free — no custom comparator needed.
 - **Set uses `in` before `add`.** Unlike C++, Scala, and Rust where `insert` returns a boolean, Python's `set.add` returns `None`, so the first-duplicate solution checks `val in seen` before adding.
 - **Nested dicts for tries.** The hash map trie is arguably the most Pythonic implementation in the repo — nesting `dict[str, Node]` is natural and concise. No memory management, no pointers, no ownership — just dicts all the way down.
+- **Unbounded integers.** Python's ints are arbitrary-precision, so neither the index cap nor the position range exists. It is the only one of the four where the sparse formats have no size limit of any kind — the opposite extreme from Scala.
 - **No integer types to distinguish.** The index/position split that C++ and Rust express through `std::int32_t` versus `std::size_t` has nowhere to live in Python, so it survives only as naming: `i` and `j` are indices, `rp` and `cp` are positions. Python is also the only one of the four where `Vector`'s optional buffer is expressible as a default argument (`val: list[float] | None = None`) rather than as a second constructor.
 - **Performance paradox.** `(head + 1) % max_size` is relatively fast in Python because the overhead of the interpreter dwarfs the cost of a single modulo.
 
@@ -240,6 +263,8 @@ Each implementation uses the same imperative, mutable style to keep comparisons 
 - **TreeMap floor lookups.** `tsMap.to(timestamp).lastOption` returns a view of all entries up to and including the key, then grabs the last one. Clean and readable, but creates an intermediate view.
 - **Insert-returns-boolean.** Both `mutable.HashSet.add` and `mutable.TreeSet.add` return `true` if the element was new, `false` if it already existed — same pattern as C++ and Rust.
 - **JVM lifecycle.** `sbt` has a long cold-start time, but the JIT compiler optimizes hot paths as the code runs.
+- **No unsigned type, and arrays indexed by `Int`.** Scala has `Byte`, `Short`, `Int`, `Long`, all signed, and `Array` subscripts only with `Int`. So the *index* half of the split is fine (`Int` is exactly a 32-bit signed integer) but the *position* half has nowhere to go, which caps nnz at 2^31 where C++ and Rust reach 2^62. `Array[Long]` would not help, since the JVM caps any array at `Int.MaxValue` elements regardless of element type: the fix is chunked storage, a different layout rather than a different declaration. See `NOTES.md`.
+- **`while` in the numerical kernels is deliberate.** General Scala would write `for (rp <- a.rowPtr(i) until a.rowPtr(i + 1))`, and that is idiomatic Scala. Numeric Scala libraries (Breeze, Spire) conventionally use `while` in inner loops, because `for` builds a `Range` and passes the body as a function object, leaving the elimination of both to the JIT at run time rather than to the compiler. The kernels follow the numeric convention; problems 1-8 use `while` for an unrelated reason (Scala 3 deprecates non-local `return` inside a `for`).
 - **`val` is a reserved word.** The value buffer is named `val` in the other three languages; Scala forbids it, so the field is `values` there. The only place in the repo where shared vocabulary bends to a host language. `Vector` also shadows `scala.Vector` within its own file, harmless since the collection is unused there.
 - **Flexibility.** Scala offers the unique ability to switch to immutable collections if data persistence were a requirement.
 
@@ -252,6 +277,8 @@ Each implementation uses the same imperative, mutable style to keep comparisons 
 - **Reverse wrapper for min-heap.** `BinaryHeap` is a max-heap by default. Wrapping entries in `std::cmp::Reverse` is the idiomatic flip — simpler than C++'s template comparator or Scala's reversed `Ordering`.
 - **BTreeMap floor lookups.** `range(..=timestamp).next_back()` returns an iterator over all entries up to and including the key, then grabs the last one. The range syntax `..=` (inclusive) is a Rust-specific feature that makes this very readable.
 - **Insert-returns-boolean.** Both `HashSet::insert` and `BTreeSet::insert` return `true` if the value was new — the same pattern as C++ and Scala, making the first-duplicate code nearly identical across three of the four languages.
+- **`dead_code` catches an unused field.** The compiler flagged `CsrMatrix.n_size` as never read, which is true and informative: a CSR matvec never needs `n`, since the column bound lives in `colIdx`. None of the other three languages says anything. The lint fires here partly because this is a binary crate, where `pub` exempts nothing since nothing is exported.
+- **Range loops are free.** `for i in 0..n` monomorphizes and inlines at compile time, producing the same code as a hand-written loop and often better, since known bounds let the compiler drop the per-iteration bounds check. The idiomatic form is the fast one, which is exactly the contrast with Scala, where the same abstraction is eliminated only if the JIT gets to it.
 - **No implicit numeric conversion, and `Vec` subscripts only with `usize`.** Every crossing between integer types is written out with `as`. This is why the index-type convention is a statement about *storage* rather than about loop counters: forcing a non-`usize` counter would give up `for i in 0..n` and turn every loop into a hand-driven `while`, where C++ pays only a cast in the condition. Rust also has no constructor overloading or default arguments, so `Vector` needs two named constructors (`new` and `from_val`) where C++ and Scala use two overloads and Python one default.
 - **Safety and Option types.** The `if let Some(...)` pattern forces the developer to acknowledge that operations like `pop_front()` or `range().next_back()` could return `None`, preventing runtime crashes.
 - **Explicit mutation.** Rust requires `&mut self`, making it crystal clear which methods modify internal state. The union-find's `find()` with path compression is the sharpest example: it's logically a query, but because it rewrites parent pointers for performance, Rust requires `&mut self` — the naive version without path compression can use `&self` instead.
@@ -267,6 +294,10 @@ Each implementation uses the same imperative, mutable style to keep comparisons 
 
 - **Layout versus schedule** (problem 9). The first problem where the container is a flat buffer and the design question is what the indices mean. All four implementations are nearly identical, and the divergence is entirely in integer typing: C++ and Rust can express the index/position distinction in the type system, Scala has one `Int` for both, Python has neither. Since dense matvec stores no indices, none of the four needs a cast; problem 10 is where the distinction has consequences.
 
+- **Where the index/position split has teeth** (problem 10). Dense matvec stores no indices, so all four languages come out identical. Sparse stores them, and the four separate cleanly: C++ and Rust express the split in the type system and pay for the crossing differently (no cast against one `as usize`), Python has unbounded integers so no cap exists at all, and Scala has no unsigned type, capping nnz at 2^31 where the others reach 2^62. This is the widest four-way divergence in the repo, and it is about integer types rather than containers.
+- **Zero-cost abstraction, guaranteed against hoped-for** (problems 9 and 10). Rust, Python and Scala all express an inner loop as iteration over a range object. Rust's is eliminated at compile time by monomorphization, Python's is the fastest construct the interpreter offers, and Scala's depends on the JIT inlining `Range.foreach`, which is why numeric Scala conventionally writes `while` instead. C++ has only the counter loop and the question does not arise.
+- **Cross-problem reuse** (problem 10). `Vector` is defined once in problem 9 and reused, and each language spells the dependency differently: `#include` in C++, a module import in Python, nothing at all in Scala since both files share a package, and a crate path in Rust.
+
 ### Comparison Matrix
 
 | Feature | C++ | Python | Scala | Rust |
@@ -279,4 +310,6 @@ Each implementation uses the same imperative, mutable style to keep comparisons 
 | **Sorted set** | `std::set` (red-black tree) | None — `bisect` on lists | `mutable.TreeSet` (red-black tree) | `BTreeSet` (B-tree) |
 | **Set insert API** | `pair<iter, bool>` | `None` (`in` + `add`) | `Boolean` | `bool` |
 | **Integer conversion** | Implicit (usual arithmetic conversions) | Untyped | Implicit widening (`Int` to `Long`) | None — every `as` written out |
+| **Index / position types** | `int32_t` / `size_t` | Unbounded ints | `Int` for both (no unsigned) | `i32` / `usize` |
+| **Sparse nnz ceiling** | ~2^62 | None | 2^31 (JVM array limit) | ~2^62 |
 | **Style used** | Imperative | Imperative | Mutable (for parity) | Imperative / Safe |

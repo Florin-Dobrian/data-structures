@@ -22,6 +22,7 @@ A catalog of candidate problems for the data-structures repo. Each is small enou
 | # | Problem | Structures Exercised |
 |---|---------|---------------------|
 | 9 | Dense Matrix-Vector Product | flat value buffer, row-major and column-major |
+| 10 | Sparse Matrix-Vector Product | CSR and CSC (pointer, index and value arrays) |
 
 ## Recommendations
 
@@ -38,3 +39,4 @@ The eight discrete problems are implemented, and the numerical kernels have star
 7. Prefix Trie — recursive ownership, Rust Box vs. index-based pools
 8. Connected Components — union-find, path compression, Rust &mut self on queries
 9. Dense Matrix-Vector Product — gather vs. scatter, row-major vs. column-major, index versus position
+10. Sparse Matrix-Vector Product — CSR vs. CSC, where the index/position typing has consequences

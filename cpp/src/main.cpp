@@ -9,6 +9,7 @@
 #include "prefix_trie.h"
 #include "union_find.h"
 #include "dense_matvec.h"
+#include "sparse_matvec.h"
 
 void run_trackers() {
     std::cout << "=== Problem 1: Moving Average Tracker ===\n" << std::endl;
@@ -274,6 +275,48 @@ void run_dense_matvec() {
     show("col_dense_matvec (scatter)", col_dense_matvec(ca, x));
 }
 
+void run_sparse_matvec() {
+    std::cout << "=== Problem 10: Sparse Matrix-Vector Product ===\n" << std::endl;
+
+    // The same 3 x 4 matrix in both formats, 6 nonzeros:
+    //
+    //   1  0  2  0
+    //   0  3  0  0
+    //   4  0  5  6
+    //
+    std::size_t m = 3, n = 4;
+
+    // CSR: row by row.
+    CsrMatrix ra(m, n,
+                 {0, 2, 3, 6},              // rowPtr
+                 {0, 2, 1, 0, 2, 3},        // colIdx
+                 {1, 2, 3, 4, 5, 6});       // val
+
+    // CSC: column by column, so the same nonzeros in a different order.
+    CscMatrix ca(m, n,
+                 {0, 2, 3, 5, 6},           // colPtr
+                 {0, 2, 1, 0, 2, 2},        // rowIdx
+                 {1, 4, 3, 2, 5, 6});       // val
+
+    Vector x(n, {1.0, 2.0, 3.0, 4.0});
+
+    std::cout << "A is " << m << " x " << n << " with 6 nonzeros, x = [1, 2, 3, 4]" << std::endl;
+    std::cout << std::endl;
+
+    auto show = [](const std::string& name, const Vector& y) {
+        std::cout << "--- " << name << " ---" << std::endl;
+        std::cout << "y = [";
+        for (std::size_t i = 0; i < y.size; i++) {
+            if (i > 0) std::cout << ", ";
+            std::cout << y.val[i];
+        }
+        std::cout << "]" << std::endl << std::endl;
+    };
+
+    show("csr_sparse_matvec (gather)", csr_sparse_matvec(ra, x));
+    show("csc_sparse_matvec (scatter)", csc_sparse_matvec(ca, x));
+}
+
 int main() {
     run_trackers();
     run_lru_cache();
@@ -284,5 +327,6 @@ int main() {
     run_prefix_trie();
     run_union_find();
     run_dense_matvec();
+    run_sparse_matvec();
     return 0;
 }

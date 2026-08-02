@@ -13,6 +13,9 @@ from datastructures.dense_matvec import (
     Vector, RowDenseMatrix, ColDenseMatrix,
     row_dense_matvec, col_dense_matvec,
 )
+from datastructures.sparse_matvec import (
+    CsrMatrix, CscMatrix, csr_sparse_matvec, csc_sparse_matvec,
+)
 
 
 def run_trackers():
@@ -186,6 +189,40 @@ def run_dense_matvec():
     print(f"y = {col_dense_matvec(ca, x).val}\n")
 
 
+def run_sparse_matvec():
+    print("=== Problem 10: Sparse Matrix-Vector Product ===\n")
+
+    # The same 3 x 4 matrix in both formats, 6 nonzeros:
+    #
+    #   1  0  2  0
+    #   0  3  0  0
+    #   4  0  5  6
+    #
+    m, n = 3, 4
+
+    # CSR: row by row.
+    ra = CsrMatrix(m, n,
+                   [0, 2, 3, 6],            # row_ptr
+                   [0, 2, 1, 0, 2, 3],      # col_idx
+                   [1, 2, 3, 4, 5, 6])      # val
+
+    # CSC: column by column, so the same nonzeros in a different order.
+    ca = CscMatrix(m, n,
+                   [0, 2, 3, 5, 6],         # col_ptr
+                   [0, 2, 1, 0, 2, 2],      # row_idx
+                   [1, 4, 3, 2, 5, 6])      # val
+
+    x = Vector(n, [1.0, 2.0, 3.0, 4.0])
+
+    print(f"A is {m} x {n} with 6 nonzeros, x = [1, 2, 3, 4]\n")
+
+    print("--- csr_sparse_matvec (gather) ---")
+    print(f"y = {csr_sparse_matvec(ra, x).val}\n")
+
+    print("--- csc_sparse_matvec (scatter) ---")
+    print(f"y = {csc_sparse_matvec(ca, x).val}\n")
+
+
 if __name__ == "__main__":
     run_trackers()
     run_lru_cache()
@@ -196,3 +233,4 @@ if __name__ == "__main__":
     run_prefix_trie()
     run_union_find()
     run_dense_matvec()
+    run_sparse_matvec()

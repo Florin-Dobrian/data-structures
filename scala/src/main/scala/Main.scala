@@ -232,6 +232,41 @@ object Main extends App {
     println(s"y = [${colDenseMatvec(ca, x).values.mkString(", ")}]\n")
   }
 
+  def runSparseMatvec(): Unit = {
+    println("=== Problem 10: Sparse Matrix-Vector Product ===\n")
+
+    // The same 3 x 4 matrix in both formats, 6 nonzeros:
+    //
+    //   1  0  2  0
+    //   0  3  0  0
+    //   4  0  5  6
+    //
+    val m = 3
+    val n = 4
+
+    // CSR: row by row.
+    val ra = CsrMatrix(m, n,
+      Array(0, 2, 3, 6),                                  // rowPtr
+      Array(0, 2, 1, 0, 2, 3),                            // colIdx
+      Array(1.0, 2.0, 3.0, 4.0, 5.0, 6.0))                // values
+
+    // CSC: column by column, so the same nonzeros in a different order.
+    val ca = CscMatrix(m, n,
+      Array(0, 2, 3, 5, 6),                               // colPtr
+      Array(0, 2, 1, 0, 2, 2),                            // rowIdx
+      Array(1.0, 4.0, 3.0, 2.0, 5.0, 6.0))                // values
+
+    val x = Vector(n, Array(1.0, 2.0, 3.0, 4.0))
+
+    println(s"A is $m x $n with 6 nonzeros, x = [1, 2, 3, 4]\n")
+
+    println("--- csrSparseMatvec (gather) ---")
+    println(s"y = [${csrSparseMatvec(ra, x).values.mkString(", ")}]\n")
+
+    println("--- cscSparseMatvec (scatter) ---")
+    println(s"y = [${cscSparseMatvec(ca, x).values.mkString(", ")}]\n")
+  }
+
   runTrackers()
   runLruCache()
   runNextGreater()
@@ -241,4 +276,5 @@ object Main extends App {
   runPrefixTrie()
   runUnionFind()
   runDenseMatvec()
+  runSparseMatvec()
 }

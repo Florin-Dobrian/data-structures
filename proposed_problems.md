@@ -4,7 +4,9 @@ A catalog of candidate problems for the data-structures repo. Each targets a spe
 
 ## Current Problems
 
-| # | Problem | Containers Exercised |
+### Discrete Problems
+
+| # | Problem | Structures Exercised |
 |---|---------|---------------------|
 | 1 | Moving Average Tracker | deque, circular buffer (array) |
 | 2 | LRU Cache | hash map + doubly linked list, ordered map |
@@ -15,9 +17,15 @@ A catalog of candidate problems for the data-structures repo. Each targets a spe
 | 7 | Prefix Trie | hash map trie, fixed-array trie |
 | 8 | Connected Components | union-find (naive + path compression / union by rank) |
 
+### Numerical Kernels
+
+| # | Problem | Structures Exercised |
+|---|---------|---------------------|
+| 9 | Dense Matrix-Vector Product | flat value buffer, row-major and column-major |
+
 ## Recommendations
 
-All eight problems are implemented. The repo covers: arrays, deques, hash maps, linked lists, stacks, heaps, sorted maps, hash sets, sorted sets, tries, and union-find — a comprehensive tour of the container families and algorithmic data structures you reach for in practice.
+The eight discrete problems are implemented, and the numerical kernels have started. The discrete half covers arrays, deques, hash maps, linked lists, stacks, heaps, sorted maps, hash sets, sorted sets, tries, and union-find — a comprehensive tour of the container families and algorithmic data structures you reach for in practice. The numerical half turns to flat buffers, where the design question is what the indices mean rather than which container to reach for.
 
 ### Suggested order (for new readers)
 
@@ -29,3 +37,4 @@ All eight problems are implemented. The repo covers: arrays, deques, hash maps, 
 6. First Duplicate in a Stream — hash set vs. sorted set, API convergence
 7. Prefix Trie — recursive ownership, Rust Box vs. index-based pools
 8. Connected Components — union-find, path compression, Rust &mut self on queries
+9. Dense Matrix-Vector Product — gather vs. scatter, row-major vs. column-major, index versus position

@@ -12,6 +12,7 @@
 #include "dense_matvec.h"
 #include "sparse_matvec.h"
 #include "dense_lu_factor.h"
+#include "dense_lu_solve.h"
 
 void run_trackers() {
     std::cout << "=== Problem 1: Moving Average Tracker ===\n" << std::endl;
@@ -375,6 +376,41 @@ void run_dense_lu_factor() {
     show("right_dense_lu_factor (scatter)", right_dense_lu_factor(a));
 }
 
+void run_dense_lu_solve() {
+    std::cout << "=== Problem 12: Dense LU Solve ===\n" << std::endl;
+
+    // The factor problem 11 computes, in both layouts. U in the upper
+    // triangle, L's multipliers in the strict lower, unit diagonal implied:
+    //
+    //    2   4  -2   6
+    //    2   3   1  -3
+    //   -1   3   4   2
+    //    3  -2   1   5
+    //
+    std::size_t n = 4;
+    std::vector<double> rowMajor = {2, 4, -2, 6, 2, 3, 1, -3, -1, 3, 4, 2, 3, -2, 1, 5};
+    std::vector<double> colMajor = {2, 2, -1, 3, 4, 3, 3, -2, -2, 1, 4, 1, 6, -3, 2, 5};
+
+    RowDenseMatrix rlu(n, n, rowMajor);
+    ColDenseMatrix clu(n, n, colMajor);
+    Vector b(n, {28.0, 53.0, -17.0, 130.0});
+
+    std::cout << "LU is " << n << " x " << n << ":" << std::endl;
+    print_grid(rowMajor, n, n);
+    print_val("b", b.val);
+    std::cout << std::endl;
+
+    std::cout << "--- row_dense_lu_solve (gather) ---" << std::endl;
+    print_val("val", rlu.val);
+    print_val("x", row_dense_lu_solve(rlu, b).val);
+    std::cout << std::endl;
+
+    std::cout << "--- col_dense_lu_solve (scatter) ---" << std::endl;
+    print_val("val", clu.val);
+    print_val("x", col_dense_lu_solve(clu, b).val);
+    std::cout << std::endl;
+}
+
 int main() {
     run_trackers();
     run_lru_cache();
@@ -387,5 +423,6 @@ int main() {
     run_dense_matvec();
     run_sparse_matvec();
     run_dense_lu_factor();
+    run_dense_lu_solve();
     return 0;
 }

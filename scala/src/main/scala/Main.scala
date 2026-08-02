@@ -314,6 +314,40 @@ object Main extends App {
     show("rightDenseLuFactor (scatter)", rightDenseLuFactor(a))
   }
 
+  def runDenseLuSolve(): Unit = {
+    println("=== Problem 12: Dense LU Solve ===\n")
+
+    // The factor problem 11 computes, in both layouts. U in the upper
+    // triangle, L's multipliers in the strict lower, unit diagonal implied:
+    //
+    //    2   4  -2   6
+    //    2   3   1  -3
+    //   -1   3   4   2
+    //    3  -2   1   5
+    //
+    val n = 4
+    val rowMajor = Array(2.0, 4.0, -2.0, 6.0, 2.0, 3.0, 1.0, -3.0,
+                         -1.0, 3.0, 4.0, 2.0, 3.0, -2.0, 1.0, 5.0)
+    val colMajor = Array(2.0, 2.0, -1.0, 3.0, 4.0, 3.0, 3.0, -2.0,
+                         -2.0, 1.0, 4.0, 1.0, 6.0, -3.0, 2.0, 5.0)
+
+    val rlu = RowDenseMatrix(n, n, rowMajor)
+    val clu = ColDenseMatrix(n, n, colMajor)
+    val b = Vector(n, Array(28.0, 53.0, -17.0, 130.0))
+
+    println(s"LU is $n x $n:")
+    printGrid(rowMajor, n, n)
+    println(s"b = [${b.values.mkString(", ")}]\n")
+
+    println("--- rowDenseLuSolve (gather) ---")
+    println(s"val = [${rlu.values.mkString(", ")}]")
+    println(s"x = [${rowDenseLuSolve(rlu, b).values.mkString(", ")}]\n")
+
+    println("--- colDenseLuSolve (scatter) ---")
+    println(s"val = [${clu.values.mkString(", ")}]")
+    println(s"x = [${colDenseLuSolve(clu, b).values.mkString(", ")}]\n")
+  }
+
   runTrackers()
   runLruCache()
   runNextGreater()
@@ -325,4 +359,5 @@ object Main extends App {
   runDenseMatvec()
   runSparseMatvec()
   runDenseLuFactor()
+  runDenseLuSolve()
 }

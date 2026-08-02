@@ -24,6 +24,7 @@ A catalog of candidate problems for the data-structures repo. Each is small enou
 | 9 | Dense Matrix-Vector Product | flat value buffer, row-major and column-major |
 | 10 | Sparse Matrix-Vector Product | CSR and CSC (pointer, index and value arrays) |
 | 11 | Dense LU Factorization | column-major buffer holding both triangles |
+| 12 | Dense LU Solve | triangular passes over row-major and column-major factors |
 
 ## Recommendations
 
@@ -42,3 +43,4 @@ The eight discrete problems are implemented, and the numerical kernels have star
 9. Dense Matrix-Vector Product — gather vs. scatter, row-major vs. column-major, index versus position
 10. Sparse Matrix-Vector Product — CSR vs. CSC, where the index/position typing has consequences
 11. Dense LU Factorization — left-looking vs. right-looking, gather and scatter as schedules
+12. Dense LU Solve — forward and back substitution, and four spellings of a descending loop

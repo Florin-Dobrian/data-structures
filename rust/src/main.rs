@@ -9,6 +9,7 @@ mod union_find;
 mod dense_matvec;
 mod sparse_matvec;
 mod dense_lu_factor;
+mod dense_lu_solve;
 
 use avg_tracker::{DequeTracker, CircularBufferTracker};
 use lru_cache::{SimpleVecLRUCache, ManualLRUCache};
@@ -28,6 +29,7 @@ use sparse_matvec::{
     CsrMatrix, CscMatrix, csr_sparse_matvec, csc_sparse_matvec,
 };
 use dense_lu_factor::{left_dense_lu_factor, right_dense_lu_factor};
+use dense_lu_solve::{row_dense_lu_solve, col_dense_lu_solve};
 use union_find::{NaiveUnionFind, RankedUnionFind};
 
 fn run_trackers() {
@@ -369,6 +371,40 @@ fn run_dense_lu_factor() {
     show("right_dense_lu_factor (scatter)", right_dense_lu_factor(&a));
 }
 
+fn run_dense_lu_solve() {
+    println!("=== Problem 12: Dense LU Solve ===\n");
+
+    // The factor problem 11 computes, in both layouts. U in the upper
+    // triangle, L's multipliers in the strict lower, unit diagonal implied:
+    //
+    //    2   4  -2   6
+    //    2   3   1  -3
+    //   -1   3   4   2
+    //    3  -2   1   5
+    //
+    let n = 4;
+    let row_major = vec![2.0, 4.0, -2.0, 6.0, 2.0, 3.0, 1.0, -3.0,
+                         -1.0, 3.0, 4.0, 2.0, 3.0, -2.0, 1.0, 5.0];
+    let col_major = vec![2.0, 2.0, -1.0, 3.0, 4.0, 3.0, 3.0, -2.0,
+                         -2.0, 1.0, 4.0, 1.0, 6.0, -3.0, 2.0, 5.0];
+
+    let rlu = RowDenseMatrix { m_size: n, n_size: n, val: row_major.clone() };
+    let clu = ColDenseMatrix { m_size: n, n_size: n, val: col_major };
+    let b = Vector::from_val(n, vec![28.0, 53.0, -17.0, 130.0]);
+
+    println!("LU is {} x {}:", n, n);
+    print_grid(&row_major, n, n);
+    println!("b = [{}]\n", fmt_vector(&b));
+
+    println!("--- row_dense_lu_solve (gather) ---");
+    println!("val = [{}]", fmt_f64(&rlu.val));
+    println!("x = [{}]\n", fmt_vector(&row_dense_lu_solve(&rlu, &b)));
+
+    println!("--- col_dense_lu_solve (scatter) ---");
+    println!("val = [{}]", fmt_f64(&clu.val));
+    println!("x = [{}]\n", fmt_vector(&col_dense_lu_solve(&clu, &b)));
+}
+
 fn main() {
     run_trackers();
     run_lru_cache();
@@ -381,4 +417,5 @@ fn main() {
     run_dense_matvec();
     run_sparse_matvec();
     run_dense_lu_factor();
+    run_dense_lu_solve();
 }

@@ -19,6 +19,9 @@ from datastructures.sparse_matvec import (
 from datastructures.dense_lu_factor import (
     left_dense_lu_factor, right_dense_lu_factor,
 )
+from datastructures.dense_lu_solve import (
+    row_dense_lu_solve, col_dense_lu_solve,
+)
 
 
 def run_trackers():
@@ -265,6 +268,40 @@ def run_dense_lu_factor():
     show("right_dense_lu_factor (scatter)", right_dense_lu_factor(a))
 
 
+def run_dense_lu_solve():
+    print("=== Problem 12: Dense LU Solve ===\n")
+
+    # The factor problem 11 computes, in both layouts. U in the upper
+    # triangle, L's multipliers in the strict lower, unit diagonal implied:
+    #
+    #    2   4  -2   6
+    #    2   3   1  -3
+    #   -1   3   4   2
+    #    3  -2   1   5
+    #
+    n = 4
+    row_major = [2.0, 4.0, -2.0, 6.0, 2.0, 3.0, 1.0, -3.0,
+                 -1.0, 3.0, 4.0, 2.0, 3.0, -2.0, 1.0, 5.0]
+    col_major = [2.0, 2.0, -1.0, 3.0, 4.0, 3.0, 3.0, -2.0,
+                 -2.0, 1.0, 4.0, 1.0, 6.0, -3.0, 2.0, 5.0]
+
+    rlu = RowDenseMatrix(n, n, row_major)
+    clu = ColDenseMatrix(n, n, col_major)
+    b = Vector(n, [28.0, 53.0, -17.0, 130.0])
+
+    print(f"LU is {n} x {n}:")
+    print_grid(row_major, n, n)
+    print(f"b = {b.val}\n")
+
+    print("--- row_dense_lu_solve (gather) ---")
+    print(f"val = {rlu.val}")
+    print(f"x = {row_dense_lu_solve(rlu, b).val}\n")
+
+    print("--- col_dense_lu_solve (scatter) ---")
+    print(f"val = {clu.val}")
+    print(f"x = {col_dense_lu_solve(clu, b).val}\n")
+
+
 if __name__ == "__main__":
     run_trackers()
     run_lru_cache()
@@ -277,3 +314,4 @@ if __name__ == "__main__":
     run_dense_matvec()
     run_sparse_matvec()
     run_dense_lu_factor()
+    run_dense_lu_solve()

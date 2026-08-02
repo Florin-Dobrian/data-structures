@@ -267,6 +267,44 @@ After cloning, run once from the repo root:
 
 The Python project includes `ipykernel` as a dev dependency, so you can experiment interactively with any of the code in PyCharm notebooks, Jupyter, or JupyterLab — just create an `.ipynb` file in the `python/` directory and import from `datastructures`.
 
+## IDEs
+
+Each language directory is a self-contained project with its own build descriptor, so each gets its own JetBrains IDE opened at that directory. **Never open the repository root in any of them** — whichever came first would claim `data-structures/.idea/` and the second would fight it. One IDE per project root.
+
+| Language | IDE | Open at | Build file |
+|----------|-----|---------|-----------|
+| C++      | CLion       | `cpp/`    | `CMakeLists.txt` |
+| Python   | PyCharm     | `python/` | `pyproject.toml` |
+| Scala    | IntelliJ IDEA | `scala/` | `build.sbt` |
+| Rust     | RustRover   | `rust/`   | `Cargo.toml` |
+
+### Two ways to open, and the difference
+
+**As a folder.** File -> Open, select the directory. The IDE indexes the text and gives syntax highlighting, file navigation, and search. It does *not* know the project model, so it has no include paths, no crate structure, no classpath. Go-to-definition and find-usages will resolve within a file but not reliably across files or into the standard library, and you may see spurious "unresolved symbol" marks. Fine for reading.
+
+**As a project.** File -> Open, select the *build file* itself rather than the directory, and take "Open as Project" when offered. The IDE configures from the build descriptor: CLion runs CMake, RustRover reads the Cargo manifest, IntelliJ runs an sbt import, PyCharm picks up the uv environment. You then get full cross-file resolution, correct stdlib highlighting, refactoring, and working build and run buttons.
+
+Scala is the one where importing matters most, since sbt resolution is what makes the Scala 3 top-level definitions and the `Vector` shadowing resolve correctly. C++ and Rust read acceptably as plain text at this size.
+
+### Starting with a folder does not lock you out
+
+Opening as a folder first is free, and converting later needs no reopening. Right-click the build file in the project tree and take the link action:
+
+- CLion: **Link C/C++ Project with CMakeLists.txt**
+- RustRover: **Link Cargo Project**
+- IntelliJ IDEA: **Link sbt Project**
+- PyCharm: set the interpreter, which is the equivalent step for a uv project
+
+The same offer usually appears as a banner across the top of the editor the first time the build file is opened. Either way the window and the existing `.idea/` are kept, and indexing restarts against the real project model.
+
+If the state ever gets confused, the reset is complete and cheap: close the project, delete that language directory's `.idea/`, and open the build file directly. Nothing is lost, since `.idea/` holds only window layout and local settings.
+
+### Nothing here reaches the repository
+
+`.gitignore` lists `.idea/` with no leading slash, so it matches at any depth and all four IDE folders stay untracked. `.bsp/`, `.scala-build/`, `target/` and `/cpp/build/` are covered too.
+
+One thing to expect in C++: CLion creates its own `cmake-build-debug/` inside `cpp/`, separate from the `build/` the command line uses. Both are gitignored, so this is harmless, but the two trees can disagree about what is stale. Either point CLion at `build/` in its CMake settings, or let CLion own the C++ build and stop using the command line there.
+
 ## Language Notes
 
 Each implementation uses the same imperative, mutable style to keep comparisons fair across languages.

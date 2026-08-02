@@ -9,7 +9,8 @@ See `README.md` for the full problem descriptions and language notes. Don't dupl
 ## Hard conventions
 
 - **Language order is always C++, Python, Scala, Rust.** Everywhere: docs, tables, mains, commit messages, the order you implement in.
-- **Two implementations per problem per language.** Implementation A uses the standard library; Implementation B is the manual/lower-level version. Doc comments open with `Implementation A:` / `Implementation B:` and a one-line summary.
+- **Two implementations per problem per language.** A and B are the two contrasting implementations, and what the contrast *is* depends on the part. In the discrete problems A uses the standard library and B is the manual or lower-level version. In the numerical kernels it is layout and schedule instead: row against column, CSR against CSC, left-looking against right-looking. Doc comments open with `Implementation A:` / `Implementation B:` and a one-line summary either way.
+- **In the numerical kernels the two implementations may take different inputs.** Each takes the layout its loop order walks with stride 1, so agreeing on the output is the check rather than sharing an input.
 - **One file per problem per language.** Both implementations live in that single file.
 - **Stdlib only.** No third-party dependencies in any of the four projects. `main` is the test harness; there is no test framework in any of them today.
 - **Same imperative, mutable style across all four languages**, including Scala. Parity matters more than idiom purity here; the point is that the reader can diff the four files.

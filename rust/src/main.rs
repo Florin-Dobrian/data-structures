@@ -10,6 +10,8 @@ mod dense_matvec;
 mod sparse_matvec;
 mod dense_lu_factor;
 mod dense_lu_solve;
+mod dense_convert;
+mod sparse_convert;
 
 use avg_tracker::{DequeTracker, CircularBufferTracker};
 use lru_cache::{SimpleVecLRUCache, ManualLRUCache};
@@ -30,6 +32,8 @@ use sparse_matvec::{
 };
 use dense_lu_factor::{left_dense_lu_factor, right_dense_lu_factor};
 use dense_lu_solve::{row_dense_lu_solve, col_dense_lu_solve};
+use dense_convert::{row_to_col_dense_convert, col_to_row_dense_convert};
+use sparse_convert::{csr_to_csc_sparse_convert, csc_to_csr_sparse_convert};
 use union_find::{NaiveUnionFind, RankedUnionFind};
 
 fn run_trackers() {
@@ -405,6 +409,99 @@ fn run_dense_lu_solve() {
     println!("x = [{}]\n", fmt_vector(&col_dense_lu_solve(&clu, &b)));
 }
 
+fn run_dense_convert() {
+    println!("=== Problem 13: Dense Layout Conversion ===\n");
+
+    // The 3 x 4 from problem 9:
+    //
+    //    1   2   3   4
+    //    5   6   7   8
+    //    9  10  11  12
+    //
+    let m = 3;
+    let n = 4;
+    let row_major = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0];
+    let col_major = vec![1.0, 5.0, 9.0, 2.0, 6.0, 10.0, 3.0, 7.0, 11.0, 4.0, 8.0, 12.0];
+
+    let ra = RowDenseMatrix { m_size: m, n_size: n, val: row_major.clone() };
+    let ca = ColDenseMatrix { m_size: m, n_size: n, val: col_major };
+
+    println!("A is {} x {}:", m, n);
+    print_grid(&row_major, m, n);
+    println!();
+
+    println!("--- row_to_col_dense_convert ---");
+    println!("in  (row-major) = [{}]", fmt_f64(&ra.val));
+    let to_col = row_to_col_dense_convert(&ra);
+    println!("out (col-major) = [{}]", fmt_f64(&to_col.val));
+    println!("round trip      = [{}]\n", fmt_f64(&col_to_row_dense_convert(&to_col).val));
+
+    println!("--- col_to_row_dense_convert ---");
+    println!("in  (col-major) = [{}]", fmt_f64(&ca.val));
+    let to_row = col_to_row_dense_convert(&ca);
+    println!("out (row-major) = [{}]", fmt_f64(&to_row.val));
+    println!("round trip      = [{}]\n", fmt_f64(&row_to_col_dense_convert(&to_row).val));
+}
+
+fn run_sparse_convert() {
+    println!("=== Problem 14: Sparse Format Conversion ===\n");
+
+    // The 3 x 4 from problem 10, 6 nonzeros:
+    //
+    //    1   0   2   0
+    //    0   3   0   0
+    //    4   0   5   6
+    //
+    let m = 3;
+    let n = 4;
+    let ra = CsrMatrix {
+        m_size: m,
+        n_size: n,
+        row_ptr: vec![0, 2, 3, 6],
+        col_idx: vec![0, 2, 1, 0, 2, 3],
+        val: vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+    };
+    let ca = CscMatrix {
+        m_size: m,
+        n_size: n,
+        col_ptr: vec![0, 2, 3, 5, 6],
+        row_idx: vec![0, 2, 1, 0, 2, 2],
+        val: vec![1.0, 4.0, 3.0, 2.0, 5.0, 6.0],
+    };
+
+    let dense = vec![1.0, 0.0, 2.0, 0.0, 0.0, 3.0, 0.0, 0.0, 4.0, 0.0, 5.0, 6.0];
+
+    println!("A is {} x {} with 6 nonzeros:", m, n);
+    print_grid(&dense, m, n);
+    println!();
+
+    println!("--- csr_to_csc_sparse_convert ---");
+    println!("in  rowPtr = [{}]", fmt_usize(&ra.row_ptr));
+    println!("in  colIdx = [{}]", fmt_i32(&ra.col_idx));
+    println!("in  val    = [{}]", fmt_f64(&ra.val));
+    let to_csc = csr_to_csc_sparse_convert(&ra);
+    println!("out colPtr = [{}]", fmt_usize(&to_csc.col_ptr));
+    println!("out rowIdx = [{}]", fmt_i32(&to_csc.row_idx));
+    println!("out val    = [{}]", fmt_f64(&to_csc.val));
+    let back_csr = csc_to_csr_sparse_convert(&to_csc);
+    println!("rt  rowPtr = [{}]", fmt_usize(&back_csr.row_ptr));
+    println!("rt  colIdx = [{}]", fmt_i32(&back_csr.col_idx));
+    println!("rt  val    = [{}]\n", fmt_f64(&back_csr.val));
+
+    println!("--- csc_to_csr_sparse_convert ---");
+    println!("in  colPtr = [{}]", fmt_usize(&ca.col_ptr));
+    println!("in  rowIdx = [{}]", fmt_i32(&ca.row_idx));
+    println!("in  val    = [{}]", fmt_f64(&ca.val));
+    let to_csr = csc_to_csr_sparse_convert(&ca);
+    println!("out rowPtr = [{}]", fmt_usize(&to_csr.row_ptr));
+    println!("out colIdx = [{}]", fmt_i32(&to_csr.col_idx));
+    println!("out val    = [{}]", fmt_f64(&to_csr.val));
+    let back_csc = csr_to_csc_sparse_convert(&to_csr);
+    println!("rt  colPtr = [{}]", fmt_usize(&back_csc.col_ptr));
+    println!("rt  rowIdx = [{}]", fmt_i32(&back_csc.row_idx));
+    println!("rt  val    = [{}]\n", fmt_f64(&back_csc.val));
+}
+
 fn main() {
     run_trackers();
     run_lru_cache();
@@ -418,4 +515,6 @@ fn main() {
     run_sparse_matvec();
     run_dense_lu_factor();
     run_dense_lu_solve();
+    run_dense_convert();
+    run_sparse_convert();
 }

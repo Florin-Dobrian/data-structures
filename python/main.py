@@ -22,6 +22,12 @@ from datastructures.dense_lu_factor import (
 from datastructures.dense_lu_solve import (
     row_dense_lu_solve, col_dense_lu_solve,
 )
+from datastructures.dense_convert import (
+    row_to_col_dense_convert, col_to_row_dense_convert,
+)
+from datastructures.sparse_convert import (
+    csr_to_csc_sparse_convert, csc_to_csr_sparse_convert,
+)
 
 
 def run_trackers():
@@ -302,6 +308,87 @@ def run_dense_lu_solve():
     print(f"x = {col_dense_lu_solve(clu, b).val}\n")
 
 
+def run_dense_convert():
+    print("=== Problem 13: Dense Layout Conversion ===\n")
+
+    # The 3 x 4 from problem 9:
+    #
+    #    1   2   3   4
+    #    5   6   7   8
+    #    9  10  11  12
+    #
+    m, n = 3, 4
+    row_major = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0]
+    col_major = [1.0, 5.0, 9.0, 2.0, 6.0, 10.0, 3.0, 7.0, 11.0, 4.0, 8.0, 12.0]
+
+    ra = RowDenseMatrix(m, n, row_major)
+    ca = ColDenseMatrix(m, n, col_major)
+
+    print(f"A is {m} x {n}:")
+    print_grid(row_major, m, n)
+    print()
+
+    print("--- row_to_col_dense_convert ---")
+    print(f"in  (row-major) = {ra.val}")
+    to_col = row_to_col_dense_convert(ra)
+    print(f"out (col-major) = {to_col.val}")
+    print(f"round trip      = {col_to_row_dense_convert(to_col).val}\n")
+
+    print("--- col_to_row_dense_convert ---")
+    print(f"in  (col-major) = {ca.val}")
+    to_row = col_to_row_dense_convert(ca)
+    print(f"out (row-major) = {to_row.val}")
+    print(f"round trip      = {row_to_col_dense_convert(to_row).val}\n")
+
+
+def run_sparse_convert():
+    print("=== Problem 14: Sparse Format Conversion ===\n")
+
+    # The 3 x 4 from problem 10, 6 nonzeros:
+    #
+    #    1   0   2   0
+    #    0   3   0   0
+    #    4   0   5   6
+    #
+    m, n = 3, 4
+    ra = CsrMatrix(m, n, [0, 2, 3, 6], [0, 2, 1, 0, 2, 3],
+                   [1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
+    ca = CscMatrix(m, n, [0, 2, 3, 5, 6], [0, 2, 1, 0, 2, 2],
+                   [1.0, 4.0, 3.0, 2.0, 5.0, 6.0])
+
+    dense = [1.0, 0.0, 2.0, 0.0, 0.0, 3.0, 0.0, 0.0, 4.0, 0.0, 5.0, 6.0]
+
+    print(f"A is {m} x {n} with 6 nonzeros:")
+    print_grid(dense, m, n)
+    print()
+
+    print("--- csr_to_csc_sparse_convert ---")
+    print(f"in  row_ptr = {ra.row_ptr}")
+    print(f"in  col_idx = {ra.col_idx}")
+    print(f"in  val     = {ra.val}")
+    to_csc = csr_to_csc_sparse_convert(ra)
+    print(f"out col_ptr = {to_csc.col_ptr}")
+    print(f"out row_idx = {to_csc.row_idx}")
+    print(f"out val     = {to_csc.val}")
+    back_csr = csc_to_csr_sparse_convert(to_csc)
+    print(f"rt  row_ptr = {back_csr.row_ptr}")
+    print(f"rt  col_idx = {back_csr.col_idx}")
+    print(f"rt  val     = {back_csr.val}\n")
+
+    print("--- csc_to_csr_sparse_convert ---")
+    print(f"in  col_ptr = {ca.col_ptr}")
+    print(f"in  row_idx = {ca.row_idx}")
+    print(f"in  val     = {ca.val}")
+    to_csr = csc_to_csr_sparse_convert(ca)
+    print(f"out row_ptr = {to_csr.row_ptr}")
+    print(f"out col_idx = {to_csr.col_idx}")
+    print(f"out val     = {to_csr.val}")
+    back_csc = csr_to_csc_sparse_convert(to_csr)
+    print(f"rt  col_ptr = {back_csc.col_ptr}")
+    print(f"rt  row_idx = {back_csc.row_idx}")
+    print(f"rt  val     = {back_csc.val}\n")
+
+
 if __name__ == "__main__":
     run_trackers()
     run_lru_cache()
@@ -315,3 +402,5 @@ if __name__ == "__main__":
     run_sparse_matvec()
     run_dense_lu_factor()
     run_dense_lu_solve()
+    run_dense_convert()
+    run_sparse_convert()

@@ -21,7 +21,9 @@ data-structures/
 │       ├── dense_matvec.h
 │       ├── sparse_matvec.h
 │       ├── dense_lu_factor.h
-│       └── dense_lu_solve.h
+│       ├── dense_lu_solve.h
+│       ├── dense_convert.h
+│       └── sparse_convert.h
 ├── python/              # uv + src layout
 │   ├── pyproject.toml
 │   ├── main.py
@@ -37,7 +39,9 @@ data-structures/
 │       ├── dense_matvec.py
 │       ├── sparse_matvec.py
 │       ├── dense_lu_factor.py
-│       └── dense_lu_solve.py
+│       ├── dense_lu_solve.py
+│       ├── dense_convert.py
+│       └── sparse_convert.py
 ├── scala/               # sbt
 │   ├── build.sbt
 │   └── src/main/scala/
@@ -53,7 +57,9 @@ data-structures/
 │       ├── DenseMatvec.scala
 │       ├── SparseMatvec.scala
 │       ├── DenseLuFactor.scala
-│       └── DenseLuSolve.scala
+│       ├── DenseLuSolve.scala
+│       ├── DenseConvert.scala
+│       └── SparseConvert.scala
 └── rust/                # Cargo
     ├── Cargo.toml
     └── src/
@@ -69,7 +75,9 @@ data-structures/
         ├── dense_matvec.rs
         ├── sparse_matvec.rs
         ├── dense_lu_factor.rs
-        └── dense_lu_solve.rs
+        ├── dense_lu_solve.rs
+        ├── dense_convert.rs
+        └── sparse_convert.rs
 ```
 
 ## Discrete Problems
@@ -225,6 +233,35 @@ Problem 11 produces only the column-major factor, so the row-major one is taken 
 It is also the problem where the four languages differ most visibly on something entirely mundane: the descending loop. Python writes `range(n - 1, -1, -1)`, Rust `(0..n).rev()`, C++ `for (std::size_t i = n; i-- > 0;)` because an unsigned counter cannot test against zero from above, and Scala decrements a `var` by hand. One loop, four spellings, and each follows from what the language takes a range to be.
 
 
+### 13. Dense Layout Conversion (Row-Major / Column-Major)
+
+Produce the same matrix in the other layout. Same `m`, same `n`, same entries; only their positions in the buffer change, since row-major puts `(i, j)` at `i * nSize + j` and column-major at `j * mSize + i`. Every element moves, so this is a real copy rather than a relabelling.
+
+**A — Row-major to column-major.** Reads a row consecutively, writes with a jump.
+
+**B — Column-major to row-major.** The mirror: reads a column consecutively, writes with a jump.
+
+Problems 9 through 12 all hand-write both layouts in their demos. These two functions are what would produce the second from the first, and each demo verifies by converting back and showing the original buffer returns.
+
+**Why it's interesting:** The smallest problem in the repo that is entirely about memory. There is no arithmetic at all, only two index expressions, and the two implementations are the same double loop with those expressions swapped. What it shows is that exactly one side of the copy can be contiguous: whichever way the loops nest, one of the read and the write walks with stride 1 and the other jumps by a whole row or column. No loop order fixes this, which is why real implementations block the operation into tiles that fit in cache and accept strided access only at tile boundaries.
+
+### 14. Sparse Format Conversion (CSR / CSC)
+
+The same operation on the sparse formats. CSR groups nonzeros by row, CSC by column, so converting regroups every entry and the value array comes out reordered.
+
+**A — CSR to CSC.** Count entries per column, prefix-sum the counts into `colPtr`, then walk the source by row placing each entry at its column's cursor.
+
+**B — CSC to CSR.** The mirror, counting per row and walking by column.
+
+**Why it's interesting:** Unlike problem 13, this is a real algorithm rather than a loop swap, and it is one of the most reused routines in sparse linear algebra. It is a counting sort keyed on the target group: count, prefix-sum, scatter. Two passes over the entries and one over the pointer array, so `O(nnz + n)`, linear, with no comparison performed anywhere and nothing sorted per group.
+
+The subtle part is that the output indices come out in increasing order for free. The scatter visits the source groups in ascending order, so entries landing in a given target group arrive with their other coordinate already ascending — the counting sort's stability doing the work. That is why running the conversion twice canonicalizes a matrix whose indices arrived unsorted, and it is the standard way to do it.
+
+It is also transpose. CSR of `A` and CSC of `A^T` are the same three arrays, so a routine that converts between the formats transposes for free if you relabel instead of converting. The same code therefore does double duty in most sparse libraries.
+
+Two small implementation points travel across all four languages. Counting into slot `j + 1` rather than `j` lets the prefix sum run in place with no shift afterwards. And `cursor` is scratch copied from the pointer array rather than the pointer array itself, so the output's `colPtr` survives the scatter intact; some implementations consume it and rebuild by shifting, saving `n + 1` words at the cost of clarity.
+
+
 ## Initial Setup
 
 See [SETUP.md](SETUP.md) for how the repo was initialized from scratch. This was a one-time step and does not need to be repeated.
@@ -271,20 +308,24 @@ The Python project includes `ipykernel` as a dev dependency, so you can experime
 
 Each language directory is a self-contained project with its own build descriptor, so each gets its own JetBrains IDE opened at that directory. **Never open the repository root in any of them** — whichever came first would claim `data-structures/.idea/` and the second would fight it. One IDE per project root.
 
-| Language | IDE | Open at | Build file |
-|----------|-----|---------|-----------|
-| C++      | CLion       | `cpp/`    | `CMakeLists.txt` |
-| Python   | PyCharm     | `python/` | `pyproject.toml` |
-| Scala    | IntelliJ IDEA | `scala/` | `build.sbt` |
-| Rust     | RustRover   | `rust/`   | `Cargo.toml` |
+| Language | IDE | Open as folder | Open as project | What configures |
+|----------|-----|----------------|-----------------|-----------------|
+| C++      | CLion         | `cpp/`    | `cpp/CMakeLists.txt` | CMake: include paths, target |
+| Python   | PyCharm       | `python/` | — (folder only) | interpreter setting -> `.venv/bin/python` |
+| Scala    | IntelliJ IDEA | `scala/`  | `scala/build.sbt`    | sbt: Scala version, classpath |
+| Rust     | RustRover     | `rust/`   | `rust/Cargo.toml`    | Cargo: crate graph |
+
+Python has no second thing to open: the interpreter is a *setting* inside the project, not a file, chosen under Settings -> Project -> Python Interpreter.
 
 ### Two ways to open, and the difference
 
 **As a folder.** File -> Open, select the directory. The IDE indexes the text and gives syntax highlighting, file navigation, and search. It does *not* know the project model, so it has no include paths, no crate structure, no classpath. Go-to-definition and find-usages will resolve within a file but not reliably across files or into the standard library, and you may see spurious "unresolved symbol" marks. Fine for reading.
 
-**As a project.** File -> Open, select the *build file* itself rather than the directory, and take "Open as Project" when offered. The IDE configures from the build descriptor: CLion runs CMake, RustRover reads the Cargo manifest, IntelliJ runs an sbt import, PyCharm picks up the uv environment. You then get full cross-file resolution, correct stdlib highlighting, refactoring, and working build and run buttons.
+**As a project.** For C++, Scala and Rust: File -> Open, select the *build file* itself (`CMakeLists.txt`, `build.sbt`, `Cargo.toml`) rather than the directory, and take "Open as Project" when offered. CLion runs CMake, IntelliJ runs an sbt import, RustRover reads the Cargo manifest. You then get full cross-file resolution, correct stdlib highlighting, refactoring, and working build and run buttons.
 
-Scala is the one where importing matters most, since sbt resolution is what makes the Scala 3 top-level definitions and the `Vector` shadowing resolve correctly. C++ and Rust read acceptably as plain text at this size.
+**Python is the exception.** PyCharm's project model is essentially the interpreter plus the content roots, so opening `python/` as a folder and setting the interpreter to `python/.venv/bin/python` *is* the configured state. Opening `pyproject.toml` is not how it is done, and adds almost nothing the interpreter has not already supplied.
+
+For the other three, folder mode is genuinely degraded rather than merely plainer, because each build file carries something the source tree does not. CMake knows the include paths and which files belong to the target. Cargo knows the crate graph, so without it `mod dense_matvec;` and `use crate::...` do not resolve. sbt knows the Scala version, which matters here because the top-level `def`s in the kernels are Scala 3 only. Scala is the one where importing matters most for that reason.
 
 ### Starting with a folder does not lock you out
 
@@ -318,6 +359,7 @@ Each implementation uses the same imperative, mutable style to keep comparisons 
 - **Sorted map floor lookups.** `std::map::upper_bound` returns the first element strictly greater than the query; stepping the iterator back one gives the floor entry. This two-step pattern is idiomatic but easy to get wrong at boundaries.
 - **Insert-returns-boolean.** Both `std::unordered_set::insert` and `std::set::insert` return a `pair<iterator, bool>` where `.second` indicates whether the element was new — no separate `find` needed for the first-duplicate problem.
 - **Recursive ownership via `unique_ptr`.** The trie uses `unique_ptr<Node>` for children, giving automatic recursive cleanup when a node is destroyed. This is the most natural C++ approach — straightforward, no manual `delete`, and no shared ownership needed.
+- **Post-increment reads and advances in one expression.** The sparse conversion's scatter writes `cursor[a.colIdx[rp]]++`, taking the current position and bumping the cursor in a single step. None of the other three has post-increment, so all of them split it into a read, a bump, and a use, repeating or hoisting the subscript expression.
 - **Descending loops with an unsigned counter.** `i >= 0` is always true for a `std::size_t`, so a downward loop uses `for (std::size_t i = n; i-- > 0;)`, which enters with `i = n-1` and exits after `i = 0`. This is the one place the unsigned choice costs an idiom rather than nothing, and it is exactly why some codebases prefer signed indices throughout.
 - **Copying is a declaration.** `ColDenseMatrix lu = a;` copies the whole object, buffer included, because the implicitly generated copy constructor does memberwise copy and `std::vector` copies its contents. C++ is the only one of the four where preserving `A` before factoring needs no helper function and no method call.
 - **Subscripting with a stored index needs no cast.** In `x.val[a.colIdx[rp]]` the `colIdx` entry is an `std::int32_t` and `operator[]` wants a `std::size_t`, and the conversion is implicit and silent under `-Wall -Wextra`. This is what makes the index/position split cheap to carry in C++: the types differ where it matters, and the crossing costs nothing to write.
@@ -332,6 +374,7 @@ Each implementation uses the same imperative, mutable style to keep comparisons 
 - **Tuple-based heap ordering.** `heapq` compares tuples lexicographically, so `(value, list_index, element_index)` gives natural min-heap behavior for free — no custom comparator needed.
 - **Set uses `in` before `add`.** Unlike C++, Scala, and Rust where `insert` returns a boolean, Python's `set.add` returns `None`, so the first-duplicate solution checks `val in seen` before adding.
 - **Nested dicts for tries.** The hash map trie is arguably the most Pythonic implementation in the repo — nesting `dict[str, Node]` is natural and concise. No memory management, no pointers, no ownership — just dicts all the way down.
+- **`sum` is a builtin, so the accumulator is `total`.** The gather kernels accumulate into `sum` in C++, Scala and Rust; in Python that name is occupied by `builtins.sum`. Assigning to it would shadow the builtin locally and work fine, but it is the kind of shadowing linters flag, so the Python files say `total`. Advisory rather than absolute, unlike Scala's `val`.
 - **`range` counts down directly.** `range(n - 1, -1, -1)` is a descending loop with no idiom and no method call, the simplest of the four spellings. The exclusive stop of `-1` is the only awkward part.
 - **Assignment binds a reference.** `lu = a` would alias, so the LU factorization needs an explicit `list(a.val)` to copy the buffer before overwriting it. Python, Scala and Rust all need this; only C++ copies on assignment.
 - **Unbounded integers.** Python's ints are arbitrary-precision, so neither the index cap nor the position range exists. It is the only one of the four where the sparse formats have no size limit of any kind — the opposite extreme from Scala.
@@ -346,9 +389,10 @@ Each implementation uses the same imperative, mutable style to keep comparisons 
 - **Insert-returns-boolean.** Both `mutable.HashSet.add` and `mutable.TreeSet.add` return `true` if the element was new, `false` if it already existed — same pattern as C++ and Rust.
 - **JVM lifecycle.** `sbt` has a long cold-start time, but the JIT compiler optimizes hot paths as the code runs.
 - **No unsigned type, and arrays indexed by `Int`.** Scala has `Byte`, `Short`, `Int`, `Long`, all signed, and `Array` subscripts only with `Int`. So the *index* half of the split is fine (`Int` is exactly a 32-bit signed integer) but the *position* half has nowhere to go, which caps nnz at 2^31 where C++ and Rust reach 2^62. `Array[Long]` would not help, since the JVM caps any array at `Int.MaxValue` elements regardless of element type: the fix is chunked storage, a different layout rather than a different declaration. See `NOTES.md`.
+- **`take` and `clone` for scratch copies.** `colPtr.take(nSize)` produces the conversion's cursor as a fresh array, and `values.clone()` copies a buffer before overwriting it. Both are methods on `Array`, which is a Java array, so these are the JVM's copy primitives rather than anything Scala-specific.
 - **A `while` counter outlives its loop.** `var i = 0` is scoped to the enclosing block, not to the loop, so a function with several passes cannot reuse the name. Across problems 11 and 12 this forced three renames (`r` in the right-looking factorization, then `r` and `c` in the two solves) that C++, Python and Rust never need, since each of their loop variables is scoped to its own loop. Wrapping each pass in a `{ }` block would restore scoping at the cost of two braces per pass. This is the clearest cost of the `while` choice described below.
 - **`while` in the numerical kernels is deliberate.** General Scala would write `for (rp <- a.rowPtr(i) until a.rowPtr(i + 1))`, and that is idiomatic Scala. Numeric Scala libraries (Breeze, Spire) conventionally use `while` in inner loops, because `for` builds a `Range` and passes the body as a function object, leaving the elimination of both to the JIT at run time rather than to the compiler. The kernels follow the numeric convention; problems 1-8 use `while` for an unrelated reason (Scala 3 deprecates non-local `return` inside a `for`).
-- **`val` is a reserved word.** The value buffer is named `val` in the other three languages; Scala forbids it, so the field is `values` there. The only place in the repo where shared vocabulary bends to a host language. `Vector` also shadows `scala.Vector` within its own file, harmless since the collection is unused there.
+- **`val` is a reserved word.** The value buffer is named `val` in the other three languages; Scala forbids it outright, so the field is `values` there. Not a shadowing question: the name is unusable, and the vocabulary has to bend. Compare Python's `sum`, which is merely occupied and could be shadowed. `Vector` also shadows `scala.Vector` within its own file, harmless since the collection is unused there.
 - **Flexibility.** Scala offers the unique ability to switch to immutable collections if data persistence were a requirement.
 
 ### Rust (Safe / Explicit)
@@ -387,6 +431,11 @@ Each implementation uses the same imperative, mutable style to keep comparisons 
 
 - **One descending loop, four spellings** (problem 12). Python `range(n - 1, -1, -1)`, Rust `(0..n).rev()`, C++ `for (std::size_t i = n; i-- > 0;)`, Scala a hand-decremented `var`. The differences follow from what each language takes a range to be: a lazy sequence, an iterator object, nothing at all, and nothing at all again once `while` is chosen. C++ is the only one where the awkwardness comes from the *type* of the counter rather than the shape of the loop.
 - **The gather/scatter pair, start to finish** (problems 9, 11 and 12). It appears three times at increasing weight: in the matvec as pure loop order, in the factorization as a schedule that changes when a value becomes final, and in the solve as the direction each unknown's information travels. The same distinction underlies left-looking and right-looking factorization in sparse direct solvers.
+
+- **Two ways a language takes a name away** (problems 9 through 12). Scala's `val` is reserved, so the value buffer cannot be called that and is `values` there instead. Python's `sum` is a builtin, so the gather accumulator could be called that and is `total` instead, by choice rather than necessity. One collision is absolute and forces the shared vocabulary to bend in one language; the other is advisory and only costs a local name.
+
+- **Where a copy is defensive and where it is not** (problems 11 through 14). The LU factorization overwrites its input, so all four languages need an explicit copy of `A` before starting. The conversions never touch their input, so none of them copies defensively; the only copying inside them is the counting sort's own scratch cursor. Same four languages, and the difference is the algorithm's, not the language's.
+- **One expression against three statements** (problem 14). The scatter needs to read a cursor and advance it. C++ writes `cursor[c]++`; Python, Scala and Rust have no post-increment, so each reads into a local, bumps, then uses the saved value. The smallest syntactic divergence in the repo, in the middle of its most reused algorithm.
 
 ### Comparison Matrix
 

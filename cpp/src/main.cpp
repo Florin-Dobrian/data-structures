@@ -13,6 +13,8 @@
 #include "sparse_matvec.h"
 #include "dense_lu_factor.h"
 #include "dense_lu_solve.h"
+#include "dense_convert.h"
+#include "sparse_convert.h"
 
 void run_trackers() {
     std::cout << "=== Problem 1: Moving Average Tracker ===\n" << std::endl;
@@ -411,6 +413,98 @@ void run_dense_lu_solve() {
     std::cout << std::endl;
 }
 
+void run_dense_convert() {
+    std::cout << "=== Problem 13: Dense Layout Conversion ===\n" << std::endl;
+
+    // The 3 x 4 from problem 9:
+    //
+    //    1   2   3   4
+    //    5   6   7   8
+    //    9  10  11  12
+    //
+    std::size_t m = 3, n = 4;
+    std::vector<double> rowMajor = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+    std::vector<double> colMajor = {1, 5, 9, 2, 6, 10, 3, 7, 11, 4, 8, 12};
+
+    RowDenseMatrix ra(m, n, rowMajor);
+    ColDenseMatrix ca(m, n, colMajor);
+
+    std::cout << "A is " << m << " x " << n << ":" << std::endl;
+    print_grid(rowMajor, m, n);
+    std::cout << std::endl;
+
+    std::cout << "--- row_to_col_dense_convert ---" << std::endl;
+    print_val("in  (row-major)", ra.val);
+    const ColDenseMatrix toCol = row_to_col_dense_convert(ra);
+    print_val("out (col-major)", toCol.val);
+    print_val("round trip     ", col_to_row_dense_convert(toCol).val);
+    std::cout << std::endl;
+
+    std::cout << "--- col_to_row_dense_convert ---" << std::endl;
+    print_val("in  (col-major)", ca.val);
+    const RowDenseMatrix toRow = col_to_row_dense_convert(ca);
+    print_val("out (row-major)", toRow.val);
+    print_val("round trip     ", row_to_col_dense_convert(toRow).val);
+    std::cout << std::endl;
+}
+
+void run_sparse_convert() {
+    std::cout << "=== Problem 14: Sparse Format Conversion ===\n" << std::endl;
+
+    // The 3 x 4 from problem 10, 6 nonzeros:
+    //
+    //    1   0   2   0
+    //    0   3   0   0
+    //    4   0   5   6
+    //
+    std::size_t m = 3, n = 4;
+    CsrMatrix ra(m, n, {0, 2, 3, 6}, {0, 2, 1, 0, 2, 3}, {1, 2, 3, 4, 5, 6});
+    CscMatrix ca(m, n, {0, 2, 3, 5, 6}, {0, 2, 1, 0, 2, 2}, {1, 4, 3, 2, 5, 6});
+
+    std::vector<double> dense = {1, 0, 2, 0, 0, 3, 0, 0, 4, 0, 5, 6};
+
+    auto print_idx = [](const std::string& name, const auto& idx) {
+        std::cout << name << " = [";
+        for (std::size_t p = 0; p < idx.size(); p++) {
+            if (p > 0) std::cout << ", ";
+            std::cout << idx[p];
+        }
+        std::cout << "]" << std::endl;
+    };
+
+    std::cout << "A is " << m << " x " << n << " with 6 nonzeros:" << std::endl;
+    print_grid(dense, m, n);
+    std::cout << std::endl;
+
+    std::cout << "--- csr_to_csc_sparse_convert ---" << std::endl;
+    print_idx("in  rowPtr", ra.rowPtr);
+    print_idx("in  colIdx", ra.colIdx);
+    print_val("in  val   ", ra.val);
+    const CscMatrix toCsc = csr_to_csc_sparse_convert(ra);
+    print_idx("out colPtr", toCsc.colPtr);
+    print_idx("out rowIdx", toCsc.rowIdx);
+    print_val("out val   ", toCsc.val);
+    const CsrMatrix backCsr = csc_to_csr_sparse_convert(toCsc);
+    print_idx("rt  rowPtr", backCsr.rowPtr);
+    print_idx("rt  colIdx", backCsr.colIdx);
+    print_val("rt  val   ", backCsr.val);
+    std::cout << std::endl;
+
+    std::cout << "--- csc_to_csr_sparse_convert ---" << std::endl;
+    print_idx("in  colPtr", ca.colPtr);
+    print_idx("in  rowIdx", ca.rowIdx);
+    print_val("in  val   ", ca.val);
+    const CsrMatrix toCsr = csc_to_csr_sparse_convert(ca);
+    print_idx("out rowPtr", toCsr.rowPtr);
+    print_idx("out colIdx", toCsr.colIdx);
+    print_val("out val   ", toCsr.val);
+    const CscMatrix backCsc = csr_to_csc_sparse_convert(toCsr);
+    print_idx("rt  colPtr", backCsc.colPtr);
+    print_idx("rt  rowIdx", backCsc.rowIdx);
+    print_val("rt  val   ", backCsc.val);
+    std::cout << std::endl;
+}
+
 int main() {
     run_trackers();
     run_lru_cache();
@@ -424,5 +518,7 @@ int main() {
     run_sparse_matvec();
     run_dense_lu_factor();
     run_dense_lu_solve();
+    run_dense_convert();
+    run_sparse_convert();
     return 0;
 }

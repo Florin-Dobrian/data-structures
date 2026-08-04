@@ -348,6 +348,89 @@ object Main extends App {
     println(s"x = [${colDenseLuSolve(clu, b).values.mkString(", ")}]\n")
   }
 
+  def runDenseConvert(): Unit = {
+    println("=== Problem 13: Dense Layout Conversion ===\n")
+
+    // The 3 x 4 from problem 9:
+    //
+    //    1   2   3   4
+    //    5   6   7   8
+    //    9  10  11  12
+    //
+    val m = 3
+    val n = 4
+    val rowMajor = Array(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0)
+    val colMajor = Array(1.0, 5.0, 9.0, 2.0, 6.0, 10.0, 3.0, 7.0, 11.0, 4.0, 8.0, 12.0)
+
+    val ra = RowDenseMatrix(m, n, rowMajor)
+    val ca = ColDenseMatrix(m, n, colMajor)
+
+    println(s"A is $m x $n:")
+    printGrid(rowMajor, m, n)
+    println()
+
+    println("--- rowToColDenseConvert ---")
+    println(s"in  (row-major) = [${ra.values.mkString(", ")}]")
+    val toCol = rowToColDenseConvert(ra)
+    println(s"out (col-major) = [${toCol.values.mkString(", ")}]")
+    println(s"round trip      = [${colToRowDenseConvert(toCol).values.mkString(", ")}]\n")
+
+    println("--- colToRowDenseConvert ---")
+    println(s"in  (col-major) = [${ca.values.mkString(", ")}]")
+    val toRow = colToRowDenseConvert(ca)
+    println(s"out (row-major) = [${toRow.values.mkString(", ")}]")
+    println(s"round trip      = [${rowToColDenseConvert(toRow).values.mkString(", ")}]\n")
+  }
+
+  def runSparseConvert(): Unit = {
+    println("=== Problem 14: Sparse Format Conversion ===\n")
+
+    // The 3 x 4 from problem 10, 6 nonzeros:
+    //
+    //    1   0   2   0
+    //    0   3   0   0
+    //    4   0   5   6
+    //
+    val m = 3
+    val n = 4
+    val ra = CsrMatrix(m, n, Array(0, 2, 3, 6), Array(0, 2, 1, 0, 2, 3),
+      Array(1.0, 2.0, 3.0, 4.0, 5.0, 6.0))
+    val ca = CscMatrix(m, n, Array(0, 2, 3, 5, 6), Array(0, 2, 1, 0, 2, 2),
+      Array(1.0, 4.0, 3.0, 2.0, 5.0, 6.0))
+
+    val dense = Array(1.0, 0.0, 2.0, 0.0, 0.0, 3.0, 0.0, 0.0, 4.0, 0.0, 5.0, 6.0)
+
+    println(s"A is $m x $n with 6 nonzeros:")
+    printGrid(dense, m, n)
+    println()
+
+    println("--- csrToCscSparseConvert ---")
+    println(s"in  rowPtr = [${ra.rowPtr.mkString(", ")}]")
+    println(s"in  colIdx = [${ra.colIdx.mkString(", ")}]")
+    println(s"in  val    = [${ra.values.mkString(", ")}]")
+    val toCsc = csrToCscSparseConvert(ra)
+    println(s"out colPtr = [${toCsc.colPtr.mkString(", ")}]")
+    println(s"out rowIdx = [${toCsc.rowIdx.mkString(", ")}]")
+    println(s"out val    = [${toCsc.values.mkString(", ")}]")
+    val backCsr = cscToCsrSparseConvert(toCsc)
+    println(s"rt  rowPtr = [${backCsr.rowPtr.mkString(", ")}]")
+    println(s"rt  colIdx = [${backCsr.colIdx.mkString(", ")}]")
+    println(s"rt  val    = [${backCsr.values.mkString(", ")}]\n")
+
+    println("--- cscToCsrSparseConvert ---")
+    println(s"in  colPtr = [${ca.colPtr.mkString(", ")}]")
+    println(s"in  rowIdx = [${ca.rowIdx.mkString(", ")}]")
+    println(s"in  val    = [${ca.values.mkString(", ")}]")
+    val toCsr = cscToCsrSparseConvert(ca)
+    println(s"out rowPtr = [${toCsr.rowPtr.mkString(", ")}]")
+    println(s"out colIdx = [${toCsr.colIdx.mkString(", ")}]")
+    println(s"out val    = [${toCsr.values.mkString(", ")}]")
+    val backCsc = csrToCscSparseConvert(toCsr)
+    println(s"rt  colPtr = [${backCsc.colPtr.mkString(", ")}]")
+    println(s"rt  rowIdx = [${backCsc.rowIdx.mkString(", ")}]")
+    println(s"rt  val    = [${backCsc.values.mkString(", ")}]\n")
+  }
+
   runTrackers()
   runLruCache()
   runNextGreater()
@@ -360,4 +443,6 @@ object Main extends App {
   runSparseMatvec()
   runDenseLuFactor()
   runDenseLuSolve()
+  runDenseConvert()
+  runSparseConvert()
 }

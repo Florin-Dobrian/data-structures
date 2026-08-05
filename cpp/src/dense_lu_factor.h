@@ -60,28 +60,32 @@ inline ColDenseMatrix left_dense_lu_factor(const ColDenseMatrix& a) {
 /**
  * Implementation B: right-looking, a scatter.
  *
- * The moment column k's multipliers are known, they push a rank-1 update into
- * the entire trailing submatrix. Column k is finished early and everything to
+ * The moment column j's multipliers are known, they push a rank-1 update into
+ * the entire trailing submatrix. Column j is finished early and everything to
  * its right is partially updated, the mirror of the left-looking picture.
  *
- * That update is the outer product of column k's multipliers with row k of U,
+ * That update is the outer product of column j's multipliers with row j of U,
  * which is where a real implementation calls a dense GEMM.
+ *
+ * j is always the source column and k the target, with j < k, so this is the
+ * same set of (j, k) pairs the left-looking version visits, in the opposite
+ * nesting order. The innermost statement is identical in both.
  */
 inline ColDenseMatrix right_dense_lu_factor(const ColDenseMatrix& a) {
     ColDenseMatrix lu = a;
     const std::size_t n = lu.mSize;
 
-    for (std::size_t k = 0; k < n; ++k) {
-        const std::size_t kp = k * n;
-        const double pivot = lu.val[kp + k];
-        for (std::size_t i = k + 1; i < n; ++i) {      // multipliers first
-            lu.val[kp + i] /= pivot;
+    for (std::size_t j = 0; j < n; ++j) {
+        const std::size_t jp = j * n;
+        const double pivot = lu.val[jp + j];           // U[j][j]
+        for (std::size_t i = j + 1; i < n; ++i) {      // multipliers first
+            lu.val[jp + i] /= pivot;
         }
-        for (std::size_t j = k + 1; j < n; ++j) {      // rank-1 update
-            const std::size_t jp = j * n;
-            const double ukj = lu.val[jp + k];         // U[k][j]
-            for (std::size_t i = k + 1; i < n; ++i) {
-                lu.val[jp + i] -= lu.val[kp + i] * ukj;
+        for (std::size_t k = j + 1; k < n; ++k) {      // later column k
+            const std::size_t kp = k * n;
+            const double ujk = lu.val[kp + j];         // U[j][k]
+            for (std::size_t i = j + 1; i < n; ++i) {
+                lu.val[kp + i] -= lu.val[jp + i] * ujk;
             }
         }
     }

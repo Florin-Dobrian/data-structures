@@ -60,12 +60,16 @@ def leftDenseLuFactor(a: ColDenseMatrix): ColDenseMatrix = {
 /**
  * Implementation B: right-looking, a scatter.
  *
- * The moment column k's multipliers are known, they push a rank-1 update into
- * the entire trailing submatrix. Column k is finished early and everything to
+ * The moment column j's multipliers are known, they push a rank-1 update into
+ * the entire trailing submatrix. Column j is finished early and everything to
  * its right is partially updated, the mirror of the left-looking picture.
  *
- * That update is the outer product of column k's multipliers with row k of U,
+ * That update is the outer product of column j's multipliers with row j of U,
  * which is where a real implementation calls a dense GEMM.
+ *
+ * j is always the source column and k the target, with j < k, so this is the
+ * same set of (j, k) pairs the left-looking version visits, in the opposite
+ * nesting order. The innermost statement is identical in both.
  *
  * Same L and U as A, computed on a different schedule.
  */
@@ -73,27 +77,27 @@ def rightDenseLuFactor(a: ColDenseMatrix): ColDenseMatrix = {
   val lu = copyOf(a)
   val n = lu.mSize
 
-  var k = 0
-  while (k < n) {
-    val kp = k * n
-    val pivot = lu.values(kp + k)
-    var i = k + 1
+  var j = 0
+  while (j < n) {
+    val jp = j * n
+    val pivot = lu.values(jp + j)                   // U(j)(j)
+    var i = j + 1
     while (i < n) {                                 // multipliers first
-      lu.values(kp + i) /= pivot
+      lu.values(jp + i) /= pivot
       i += 1
     }
-    var j = k + 1
-    while (j < n) {                                 // rank-1 update
-      val jp = j * n
-      val ukj = lu.values(jp + k)                   // U(k)(j)
-      var r = k + 1
+    var k = j + 1
+    while (k < n) {                                 // later column k
+      val kp = k * n
+      val ujk = lu.values(kp + j)                   // U(j)(k)
+      var r = j + 1
       while (r < n) {
-        lu.values(jp + r) -= lu.values(kp + r) * ukj
+        lu.values(kp + r) -= lu.values(jp + r) * ujk
         r += 1
       }
-      j += 1
+      k += 1
     }
-    k += 1
+    j += 1
   }
   lu
 }

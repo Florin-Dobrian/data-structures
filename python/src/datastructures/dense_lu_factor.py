@@ -47,27 +47,31 @@ def left_dense_lu_factor(a: ColDenseMatrix) -> ColDenseMatrix:
 def right_dense_lu_factor(a: ColDenseMatrix) -> ColDenseMatrix:
     """Implementation B: right-looking, a scatter.
 
-    The moment column k's multipliers are known, they push a rank-1 update
-    into the entire trailing submatrix. Column k is finished early and
+    The moment column j's multipliers are known, they push a rank-1 update
+    into the entire trailing submatrix. Column j is finished early and
     everything to its right is partially updated, the mirror of the
     left-looking picture.
 
-    That update is the outer product of column k's multipliers with row k of
+    That update is the outer product of column j's multipliers with row j of
     U, which is where a real implementation calls a dense GEMM.
+
+    j is always the source column and k the target, with j < k, so this is
+    the same set of (j, k) pairs the left-looking version visits, in the
+    opposite nesting order. The innermost statement is identical in both.
 
     Same L and U as A, computed on a different schedule.
     """
     lu = _copy_of(a)
     n = lu.m_size
 
-    for k in range(n):
-        kp = k * n
-        pivot = lu.val[kp + k]
-        for i in range(k + 1, n):                   # multipliers first
-            lu.val[kp + i] /= pivot
-        for j in range(k + 1, n):                   # rank-1 update
-            jp = j * n
-            ukj = lu.val[jp + k]                    # U[k][j]
-            for i in range(k + 1, n):
-                lu.val[jp + i] -= lu.val[kp + i] * ukj
+    for j in range(n):
+        jp = j * n
+        pivot = lu.val[jp + j]                      # U[j][j]
+        for i in range(j + 1, n):                   # multipliers first
+            lu.val[jp + i] /= pivot
+        for k in range(j + 1, n):                   # later column k
+            kp = k * n
+            ujk = lu.val[kp + j]                    # U[j][k]
+            for i in range(j + 1, n):
+                lu.val[kp + i] -= lu.val[jp + i] * ujk
     return lu

@@ -54,32 +54,36 @@ pub fn left_dense_lu_factor(a: &ColDenseMatrix) -> ColDenseMatrix {
 
 /// Implementation B: right-looking, a scatter.
 ///
-/// The moment column k's multipliers are known, they push a rank-1 update
-/// into the entire trailing submatrix. Column k is finished early and
+/// The moment column j's multipliers are known, they push a rank-1 update
+/// into the entire trailing submatrix. Column j is finished early and
 /// everything to its right is partially updated, the mirror of the
 /// left-looking picture.
 ///
-/// That update is the outer product of column k's multipliers with row k of
+/// That update is the outer product of column j's multipliers with row j of
 /// U, which is where a real implementation calls a dense GEMM.
+///
+/// j is always the source column and k the target, with j < k, so this is the
+/// same set of (j, k) pairs the left-looking version visits, in the opposite
+/// nesting order. The innermost statement is identical in both.
 ///
 /// Same L and U as A, computed on a different schedule.
 pub fn right_dense_lu_factor(a: &ColDenseMatrix) -> ColDenseMatrix {
     let mut lu = copy_of(a);
     let n = lu.m_size;
 
-    for k in 0..n {
-        let kp = k * n;
-        let pivot = lu.val[kp + k];
-        for i in (k + 1)..n {
+    for j in 0..n {
+        let jp = j * n;
+        let pivot = lu.val[jp + j]; // U[j][j]
+        for i in (j + 1)..n {
             // multipliers first
-            lu.val[kp + i] /= pivot;
+            lu.val[jp + i] /= pivot;
         }
-        for j in (k + 1)..n {
-            // rank-1 update
-            let jp = j * n;
-            let ukj = lu.val[jp + k]; // U[k][j]
-            for i in (k + 1)..n {
-                lu.val[jp + i] -= lu.val[kp + i] * ukj;
+        for k in (j + 1)..n {
+            // later column k
+            let kp = k * n;
+            let ujk = lu.val[kp + j]; // U[j][k]
+            for i in (j + 1)..n {
+                lu.val[kp + i] -= lu.val[jp + i] * ujk;
             }
         }
     }
